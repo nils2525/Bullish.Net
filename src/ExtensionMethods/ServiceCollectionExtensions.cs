@@ -1,14 +1,13 @@
-using CryptoExchange.Net.Clients;
-using CryptoExchange.Net.Interfaces;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Bullish.Net;
 using Bullish.Net.Clients;
 using Bullish.Net.Interfaces.Clients;
 using Bullish.Net.Objects.Options;
-using System.Net;
+using CryptoExchange.Net;
+using CryptoExchange.Net.Clients;
 using CryptoExchange.Net.Interfaces.Clients;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -105,25 +104,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 return new BullishRestClient(client, serviceProvider.GetRequiredService<ILoggerFactory>(), serviceProvider.GetRequiredService<IOptions<BullishRestOptions>>());
             }).ConfigurePrimaryHttpMessageHandler((serviceProvider) =>
             {
-                var handler = new HttpClientHandler();
-                try
-                {
-                    handler.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
-                    handler.DefaultProxyCredentials = CredentialCache.DefaultCredentials;
-                }
-                catch (PlatformNotSupportedException)
-                { }
-
                 var options = serviceProvider.GetRequiredService<IOptions<BullishRestOptions>>().Value;
-                if (options.Proxy != null)
-                {
-                    handler.Proxy = new WebProxy
-                    {
-                        Address = new Uri($"{options.Proxy.Host}:{options.Proxy.Port}"),
-                        Credentials = options.Proxy.Password == null ? null : new NetworkCredential(options.Proxy.Login, options.Proxy.Password)
-                    };
-                }
-                return handler;
+                return LibraryHelpers.CreateHttpClientMessageHandler(options.Proxy, options.HttpKeepAliveInterval);
             });
             services.Add(new ServiceDescriptor(typeof(IBullishSocketClient), x => { return new BullishSocketClient(x.GetRequiredService<IOptions<BullishSocketOptions>>(), x.GetRequiredService<ILoggerFactory>()); }, socketClientLifeTime ?? ServiceLifetime.Singleton));
 
