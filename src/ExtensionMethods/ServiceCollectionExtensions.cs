@@ -105,8 +105,8 @@ namespace Microsoft.Extensions.DependencyInjection
             }).ConfigurePrimaryHttpMessageHandler((serviceProvider) =>
             {
                 var options = serviceProvider.GetRequiredService<IOptions<BullishRestOptions>>().Value;
-                return LibraryHelpers.CreateHttpClientMessageHandler(options.Proxy, options.HttpKeepAliveInterval);
-            });
+                return LibraryHelpers.CreateHttpClientMessageHandler(options);
+            }).SetHandlerLifetime(Timeout.InfiniteTimeSpan);
             services.Add(new ServiceDescriptor(typeof(IBullishSocketClient), x => { return new BullishSocketClient(x.GetRequiredService<IOptions<BullishSocketOptions>>(), x.GetRequiredService<ILoggerFactory>()); }, socketClientLifeTime ?? ServiceLifetime.Singleton));
 
             services.AddTransient<ICryptoRestClient, CryptoRestClient>();
