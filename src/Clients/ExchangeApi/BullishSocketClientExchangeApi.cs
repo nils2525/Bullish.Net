@@ -144,6 +144,69 @@ namespace Bullish.Net.Clients.ExchangeApi
             var subscription = new BullishSubscription<BullishOrderBook>(_logger, topic, symbol, internalHandler, false, listenChannel);
             return SubscribeAsync(BaseAddress.AppendPath("/trading-api/v1/market-data/orderbook"), subscription, ct);
         }
+
+        /// <inheritdoc />
+        public async Task<CallResult<UpdateSubscription>> SubscribeToOrderUpdatesAsync(Action<DataEvent<BullishOrderUpdate>> onMessage, CancellationToken ct = default)
+        {
+            var internalHandler = new Action<DateTime, string?, BullishSubscriptionEvent<BullishOrderUpdate>>((receiveTime, originalData, data) =>
+            {
+                var timestamp = data.Data.Timestamp;
+                UpdateTimeOffset(timestamp);
+
+                onMessage(
+                    new DataEvent<BullishOrderUpdate>(BullishExchange.ExchangeName, data.Data, receiveTime, originalData)
+                        .WithUpdateType(data.Action.ToCEN())
+                        .WithSymbol(data.Data.Symbol)
+                        .WithStreamId(data.Channel)
+                        .WithDataTimestamp(timestamp, GetTimeOffset())
+                    );
+            });
+
+            var subscription = new BullishSubscription<BullishOrderUpdate>(_logger, "orders", null, internalHandler, true, "V1TAOrderUpdate");
+            return await SubscribeAsync(BaseAddress.AppendPath("/trading-api/v1/private-data"), subscription, ct).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc />
+        public async Task<CallResult<UpdateSubscription>> SubscribeToUserTradeUpdatesAsync(Action<DataEvent<BullishUserTrade>> onMessage, CancellationToken ct = default)
+        {
+            var internalHandler = new Action<DateTime, string?, BullishSubscriptionEvent<BullishUserTrade>>((receiveTime, originalData, data) =>
+            {
+                var timestamp = data.Data.Timestamp;
+                UpdateTimeOffset(timestamp);
+
+                onMessage(
+                    new DataEvent<BullishUserTrade>(BullishExchange.ExchangeName, data.Data, receiveTime, originalData)
+                        .WithUpdateType(data.Action.ToCEN())
+                        .WithSymbol(data.Data.Symbol)
+                        .WithStreamId(data.Channel)
+                        .WithDataTimestamp(timestamp, GetTimeOffset())
+                    );
+            });
+
+            var subscription = new BullishSubscription<BullishUserTrade>(_logger, "trades", null, internalHandler, true, "V1TATradeUpdate");
+            return await SubscribeAsync(BaseAddress.AppendPath("/trading-api/v1/private-data"), subscription, ct).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc />
+        public async Task<CallResult<UpdateSubscription>> SubscribeToAssetAccountUpdatesAsync(Action<DataEvent<BullishAssetAccount>> onMessage, CancellationToken ct = default)
+        {
+            var internalHandler = new Action<DateTime, string?, BullishSubscriptionEvent<BullishAssetAccount>>((receiveTime, originalData, data) =>
+            {
+                // BullishAssetAccount has no timestamp field, use receive time as fallback
+                var timestamp = DateTime.UtcNow;
+
+                onMessage(
+                    new DataEvent<BullishAssetAccount>(BullishExchange.ExchangeName, data.Data, receiveTime, originalData)
+                        .WithUpdateType(data.Action.ToCEN())
+                        .WithSymbol(data.Data.Symbol)
+                        .WithStreamId(data.Channel)
+                        .WithDataTimestamp(timestamp, GetTimeOffset())
+                    );
+            });
+
+            var subscription = new BullishSubscription<BullishAssetAccount>(_logger, "assetAccounts", null, internalHandler, true, "V1TAAssetAccountUpdate");
+            return await SubscribeAsync(BaseAddress.AppendPath("/trading-api/v1/private-data"), subscription, ct).ConfigureAwait(false);
+        }
         #endregion
 
         #region Queries
