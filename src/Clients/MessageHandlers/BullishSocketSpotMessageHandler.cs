@@ -21,6 +21,9 @@ namespace Bullish.Net.Clients.MessageHandlers
             AddTopicMapping<BullishSubscriptionEvent<BullishTradeSocketData>>(c => c.Data.Symbol);
             AddTopicMapping<BullishSubscriptionEvent<BullishOrderBook>>(c => c.Data.Symbol);
             AddTopicMapping<BullishSubscriptionEvent<BullishTicker>>(c => c.Data.Symbol);
+            AddTopicMapping<BullishSubscriptionEvent<BullishOrderUpdate>>(c => c.Data.Symbol);
+            AddTopicMapping<BullishSubscriptionEvent<BullishUserTrade>>(c => c.Data.Symbol);
+            AddTopicMapping<BullishSubscriptionEvent<BullishAssetAccount>>(c => c.Data.Symbol);
         }
 
         protected override MessageTypeDefinition[] TypeEvaluators { get; } = [

@@ -1,3 +1,4 @@
+using Bullish.Net.Enums;
 using Bullish.Net.Interfaces.Clients.ExchangeApi;
 using Bullish.Net.Objects.Models;
 using CryptoExchange.Net.Objects;
@@ -59,6 +60,69 @@ namespace Bullish.Net.Clients.ExchangeApi
             var result = await _baseClient.SendAsync<BullishTicker>(request, null, ct).ConfigureAwait(false);
             return result;
         }
+
+        #endregion
+
+        #region Get Symbol
+
+        /// <inheritdoc />
+        public async Task<WebCallResult<BullishSymbol>> GetSymbolAsync(string symbol, CancellationToken ct = default)
+        {
+            var request = _definitions.GetOrCreate(HttpMethod.Get, $"/v1/markets/{symbol}", BullishExchange.RateLimiter.Generic, 1, false);
+            var result = await _baseClient.SendAsync<BullishSymbol>(request, null, ct).ConfigureAwait(false);
+            return result;
+        }
+
+        #endregion
+
+        #region Get Asset
+
+        /// <inheritdoc />
+        public async Task<WebCallResult<BullishAsset>> GetAssetAsync(string symbol, CancellationToken ct = default)
+        {
+            var request = _definitions.GetOrCreate(HttpMethod.Get, $"/v1/assets/{symbol}", BullishExchange.RateLimiter.Generic, 1, false);
+            var result = await _baseClient.SendAsync<BullishAsset>(request, null, ct).ConfigureAwait(false);
+            return result;
+        }
+
+        #endregion
+
+        #region Get Order Book
+
+        /// <inheritdoc />
+        public async Task<WebCallResult<BullishOrderBook>> GetOrderBookAsync(string symbol, CancellationToken ct = default)
+        {
+            var request = _definitions.GetOrCreate(HttpMethod.Get, $"/v1/markets/{symbol}/orderbook/hybrid", BullishExchange.RateLimiter.Generic, 1, false);
+            var result = await _baseClient.SendAsync<BullishOrderBook>(request, null, ct).ConfigureAwait(false);
+            return result;
+        }
+
+        #endregion
+
+        #region Get Trades
+
+        /// <inheritdoc />
+        public async Task<WebCallResult<BullishTrade[]>> GetTradesAsync(string symbol, CancellationToken ct = default)
+        {
+            var request = _definitions.GetOrCreate(HttpMethod.Get, $"/v1/markets/{symbol}/trades", BullishExchange.RateLimiter.Generic, 1, false);
+            var result = await _baseClient.SendAsync<BullishTrade[]>(request, null, ct).ConfigureAwait(false);
+            return result;
+        }
+
+        #endregion
+
+        #region Get Candles
+
+        /// <inheritdoc />
+        public async Task<WebCallResult<BullishCandle[]>> GetCandlesAsync(string symbol, BullishCandleInterval timeBucket, CancellationToken ct = default)
+        {
+            var parameters = new ParameterCollection();
+            parameters.AddEnum("timeBucket", timeBucket);
+            var request = _definitions.GetOrCreate(HttpMethod.Get, $"/v1/markets/{symbol}/candle", BullishExchange.RateLimiter.Generic, 1, false);
+            var result = await _baseClient.SendAsync<BullishCandle[]>(request, parameters, ct).ConfigureAwait(false);
+            return result;
+        }
+
         #endregion
 
     }

@@ -27,5 +27,20 @@ namespace Bullish.Net.Interfaces.Clients.ExchangeApi
         /// <para><a href="https://api.exchange.bullish.com/docs/api/rest/trading-api/v2/#overview--multi-orderbook-websocket-unauthenticated" /></para>
         /// </summary>
         Task<CallResult<UpdateSubscription>> SubscribeToOrderBookUpdatesAsync(string symbol, bool bboOnly, Action<DataEvent<BullishOrderBook>> onMessage, CancellationToken ct = default);
+
+        /// <summary>
+        /// Subscribe to order updates (authenticated)
+        /// </summary>
+        Task<CallResult<UpdateSubscription>> SubscribeToOrderUpdatesAsync(Action<DataEvent<BullishOrderUpdate>> onMessage, CancellationToken ct = default);
+
+        /// <summary>
+        /// Subscribe to user trade updates (authenticated)
+        /// </summary>
+        Task<CallResult<UpdateSubscription>> SubscribeToUserTradeUpdatesAsync(Action<DataEvent<BullishUserTrade>> onMessage, CancellationToken ct = default);
+
+        /// <summary>
+        /// Subscribe to asset account balance updates (authenticated)
+        /// </summary>
+        Task<CallResult<UpdateSubscription>> SubscribeToAssetAccountUpdatesAsync(Action<DataEvent<BullishAssetAccount>> onMessage, CancellationToken ct = default);
     }
 }

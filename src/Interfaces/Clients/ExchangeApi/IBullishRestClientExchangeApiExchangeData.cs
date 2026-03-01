@@ -1,3 +1,4 @@
+using Bullish.Net.Enums;
 using Bullish.Net.Objects.Models;
 using CryptoExchange.Net.Objects;
 
@@ -43,5 +44,41 @@ namespace Bullish.Net.Interfaces.Clients.ExchangeApi
         /// </summary>
         /// <param name="ct">Cancellation token</param>
         Task<WebCallResult<BullishTicker>> GetTickerAsync(string symbol, CancellationToken ct = default);
+
+        /// <summary>
+        /// Get a specific market by symbol
+        /// </summary>
+        /// <param name="symbol">The symbol to get</param>
+        /// <param name="ct">Cancellation token</param>
+        Task<WebCallResult<BullishSymbol>> GetSymbolAsync(string symbol, CancellationToken ct = default);
+
+        /// <summary>
+        /// Get a specific asset by symbol
+        /// </summary>
+        /// <param name="symbol">The asset symbol to get</param>
+        /// <param name="ct">Cancellation token</param>
+        Task<WebCallResult<BullishAsset>> GetAssetAsync(string symbol, CancellationToken ct = default);
+
+        /// <summary>
+        /// Get the hybrid order book for a symbol
+        /// </summary>
+        /// <param name="symbol">The symbol to get the order book for</param>
+        /// <param name="ct">Cancellation token</param>
+        Task<WebCallResult<BullishOrderBook>> GetOrderBookAsync(string symbol, CancellationToken ct = default);
+
+        /// <summary>
+        /// Get recent trades for a symbol
+        /// </summary>
+        /// <param name="symbol">The symbol to get trades for</param>
+        /// <param name="ct">Cancellation token</param>
+        Task<WebCallResult<BullishTrade[]>> GetTradesAsync(string symbol, CancellationToken ct = default);
+
+        /// <summary>
+        /// Get candlestick/kline data for a symbol
+        /// </summary>
+        /// <param name="symbol">The symbol to get candles for</param>
+        /// <param name="timeBucket">The candle interval</param>
+        /// <param name="ct">Cancellation token</param>
+        Task<WebCallResult<BullishCandle[]>> GetCandlesAsync(string symbol, BullishCandleInterval timeBucket, CancellationToken ct = default);
     }
 }

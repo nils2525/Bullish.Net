@@ -33,7 +33,7 @@ namespace Bullish.Net.Clients.ExchangeApi
         internal BullishRestClientExchangeApi(ILogger logger, HttpClient? httpClient, BullishRestOptions options)
             : base(logger, httpClient, options.Environment.RestClientAddress.AppendPath("trading-api"), options, options.ExchangeOptions)
         {
-            Account = new BullishRestClientExchangeApiAccount(this);
+            Account = new BullishRestClientExchangeApiAccount(logger, this);
             ExchangeData = new BullishRestClientExchangeApiExchangeData(logger, this);
             Trading = new BullishRestClientExchangeApiTrading(logger, this);
         }
