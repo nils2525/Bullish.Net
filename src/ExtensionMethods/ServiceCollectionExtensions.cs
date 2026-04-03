@@ -109,8 +109,6 @@ namespace Microsoft.Extensions.DependencyInjection
             }).SetHandlerLifetime(Timeout.InfiniteTimeSpan);
             services.Add(new ServiceDescriptor(typeof(IBullishSocketClient), x => { return new BullishSocketClient(x.GetRequiredService<IOptions<BullishSocketOptions>>(), x.GetRequiredService<ILoggerFactory>()); }, socketClientLifeTime ?? ServiceLifetime.Singleton));
 
-            services.AddTransient<ICryptoRestClient, CryptoRestClient>();
-            services.AddSingleton<ICryptoSocketClient, CryptoSocketClient>();
 
             return services;
         }

@@ -1,3 +1,4 @@
+using CryptoExchange.Net.Authentication;
 using CryptoExchange.Net.Objects.Options;
 
 namespace Bullish.Net.Objects.Options
@@ -5,7 +6,7 @@ namespace Bullish.Net.Objects.Options
     /// <summary>
     /// Options for the CryptoComRestClient
     /// </summary>
-    public class BullishRestOptions : RestExchangeOptions<BullishEnvironment>
+    public class BullishRestOptions : RestExchangeOptions<BullishEnvironment, HMACCredential>
     {
         public TimeSpan ReceiveWindow { get; set; } = TimeSpan.FromSeconds(5);
 

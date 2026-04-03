@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 namespace Bullish.Net.Clients.ExchangeApi
 {
     /// <inheritdoc cref="IBullishRestClientExchangeApi" />
-    internal partial class BullishRestClientExchangeApi : RestApiClient, IBullishRestClientExchangeApi
+    internal partial class BullishRestClientExchangeApi : RestApiClient<BullishEnvironment, BullishAuthenticationProvider, HMACCredential>, IBullishRestClientExchangeApi
     {
         #region Api clients
         /// <inheritdoc />
@@ -44,7 +44,7 @@ namespace Bullish.Net.Clients.ExchangeApi
             => new SystemTextJsonMessageSerializer(SerializerOptions.WithConverters(BullishExchange.SerializerContext));
 
         /// <inheritdoc />
-        protected override AuthenticationProvider CreateAuthenticationProvider(ApiCredentials credentials)
+        protected override BullishAuthenticationProvider CreateAuthenticationProvider(HMACCredential credentials)
             => new BullishAuthenticationProvider(credentials);
 
 

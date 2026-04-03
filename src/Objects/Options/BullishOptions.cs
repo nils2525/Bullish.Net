@@ -6,7 +6,7 @@ namespace Bullish.Net.Objects.Options
     /// <summary>
     /// CryptoCom options
     /// </summary>
-    public class BullishOptions : LibraryOptions<BullishRestOptions, BullishSocketOptions, ApiCredentials, BullishEnvironment>
+    public class BullishOptions : LibraryOptions<BullishRestOptions, BullishSocketOptions, HMACCredential, BullishEnvironment>
     {
     }
 }

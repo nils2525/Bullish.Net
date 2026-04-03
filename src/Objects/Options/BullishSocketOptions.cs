@@ -1,3 +1,4 @@
+using CryptoExchange.Net.Authentication;
 using CryptoExchange.Net.Objects.Options;
 
 namespace Bullish.Net.Objects.Options
@@ -5,7 +6,7 @@ namespace Bullish.Net.Objects.Options
     /// <summary>
     /// Options for the CryptoComSocketClient
     /// </summary>
-    public class BullishSocketOptions : SocketExchangeOptions<BullishEnvironment>
+    public class BullishSocketOptions : SocketExchangeOptions<BullishEnvironment, HMACCredential>
     {
         /// <summary>
         /// Default options for new clients

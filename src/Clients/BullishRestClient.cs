@@ -11,7 +11,7 @@ using Bullish.Net.Objects.Options;
 namespace Bullish.Net.Clients
 {
     /// <inheritdoc cref="IBullishRestClient" />
-    public class BullishRestClient : BaseRestClient, IBullishRestClient
+    public class BullishRestClient : BaseRestClient<BullishEnvironment, HMACCredential>, IBullishRestClient
     {
         #region Api clients
 
@@ -48,12 +48,6 @@ namespace Bullish.Net.Clients
 
         #endregion
 
-        /// <inheritdoc />
-        public void SetOptions(UpdateOptions options)
-        {
-            ExchangeApi.SetOptions(options);
-        }
-
         /// <summary>
         /// Set the default options to be used when creating new clients
         /// </summary>
@@ -61,14 +55,6 @@ namespace Bullish.Net.Clients
         public static void SetDefaultOptions(Action<BullishRestOptions> optionsDelegate)
         {
             BullishRestOptions.Default = ApplyOptionsDelegate(optionsDelegate);
-        }
-
-        /// <inheritdoc />
-        public void SetApiCredentials(ApiCredentials credentials)
-        {
-
-            ExchangeApi.SetApiCredentials(credentials);
-
         }
     }
 }

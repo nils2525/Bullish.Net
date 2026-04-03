@@ -7,7 +7,7 @@ using CryptoExchange.Net.Objects;
 
 namespace Bullish.Net
 {
-    internal class BullishAuthenticationProvider : AuthenticationProvider
+    internal class BullishAuthenticationProvider : AuthenticationProvider<HMACCredential>
     {
         private static object _nonceLock = new();
         private static long _lastNonce = 0;
@@ -15,9 +15,9 @@ namespace Bullish.Net
         private static BullishAuthResponse? _authData = null;
         private static DateTime _jwtValidUntil = DateTime.MinValue;
 
-        public override ApiCredentialsType[] SupportedCredentialTypes { get; } = [ApiCredentialsType.Hmac];
+        public override string Key => ApiCredentials.Key;
 
-        public BullishAuthenticationProvider(ApiCredentials credentials) : base(credentials)
+        public BullishAuthenticationProvider(HMACCredential credentials) : base(credentials)
         { }
 
         private string GenerateNonce()
@@ -43,8 +43,8 @@ namespace Bullish.Net
             {
                 requestConfig.Headers["BX-TIMESTAMP"] = timestamp;
                 requestConfig.Headers["BX-NONCE"] = nonce;
-                requestConfig.Headers["BX-PUBLIC-KEY"] = _credentials.Key;
-                requestConfig.Headers["BX-SIGNATURE"] = SignHMACSHA256($"{timestamp}{nonce}GET{requestConfig.Path}?{requestConfig.QueryParameters.ToFormData()}", SignOutputType.Hex).ToLower();
+                requestConfig.Headers["BX-PUBLIC-KEY"] = ApiCredentials.Key;
+                requestConfig.Headers["BX-SIGNATURE"] = SignHMACSHA256(ApiCredentials, $"{timestamp}{nonce}GET{requestConfig.Path}?{requestConfig.QueryParameters.ToFormData()}", SignOutputType.Hex).ToLower();
                 return;
             }
             else
@@ -62,7 +62,7 @@ namespace Bullish.Net
         {
             if (_authData?.Token == null || DateTime.UtcNow > _jwtValidUntil)
             {
-                var client = new BullishRestClient(o => { o.Environment = environment; o.ApiCredentials = _credentials; });
+                var client = new BullishRestClient(o => { o.Environment = environment; o.ApiCredentials = ApiCredentials; });
                 var result = await client.ExchangeApi.Account.LoginHmac().ConfigureAwait(false);
                 if (!result.Success)
                     throw new Exception("Failed to authenticate");

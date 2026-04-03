@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 namespace Bullish.Net.Clients
 {
     /// <inheritdoc cref="IBullishSocketClient" />
-    public class BullishSocketClient : BaseSocketClient, IBullishSocketClient
+    public class BullishSocketClient : BaseSocketClient<BullishEnvironment, HMACCredential>, IBullishSocketClient
     {
         #region fields
         #endregion
@@ -49,12 +49,6 @@ namespace Bullish.Net.Clients
         }
         #endregion
 
-        /// <inheritdoc />
-        public void SetOptions(UpdateOptions options)
-        {
-            ExchangeApi.SetOptions(options);
-        }
-
         /// <summary>
         /// Set the default options to be used when creating new clients
         /// </summary>
@@ -62,12 +56,6 @@ namespace Bullish.Net.Clients
         public static void SetDefaultOptions(Action<BullishSocketOptions> optionsDelegate)
         {
             BullishSocketOptions.Default = ApplyOptionsDelegate(optionsDelegate);
-        }
-
-        /// <inheritdoc />
-        public void SetApiCredentials(ApiCredentials credentials)
-        {
-            ExchangeApi.SetApiCredentials(credentials);
         }
     }
 }

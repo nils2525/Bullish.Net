@@ -26,7 +26,7 @@ namespace Bullish.Net.Clients.ExchangeApi
     /// <summary>
     /// Client providing access to the CryptoCom Exchange websocket Api
     /// </summary>
-    internal partial class BullishSocketClientExchangeApi : SocketApiClient, IBullishSocketClientExchangeApi
+    internal partial class BullishSocketClientExchangeApi : SocketApiClient<BullishEnvironment, BullishAuthenticationProvider, HMACCredential>, IBullishSocketClientExchangeApi
     {
         #region fields
         private readonly ConcurrentDictionary<string, string> _unsubscribed = new();
@@ -55,7 +55,7 @@ namespace Bullish.Net.Clients.ExchangeApi
             => new SystemTextJsonMessageSerializer(SerializerOptions.WithConverters(BullishExchange.SerializerContext));
 
         /// <inheritdoc />
-        protected override AuthenticationProvider CreateAuthenticationProvider(ApiCredentials credentials)
+        protected override BullishAuthenticationProvider CreateAuthenticationProvider(HMACCredential credentials)
             => new BullishAuthenticationProvider(credentials);
 
         public override ISocketMessageHandler CreateMessageConverter(WebSocketMessageType messageType)
