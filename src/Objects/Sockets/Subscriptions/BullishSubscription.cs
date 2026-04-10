@@ -3,6 +3,7 @@ using CryptoExchange.Net.Objects;
 using CryptoExchange.Net.Sockets;
 using CryptoExchange.Net.Sockets.Default;
 using Microsoft.Extensions.Logging;
+using CryptoExchange.Net.Sockets.Default.Routing;
 
 namespace Bullish.Net.Objects.Sockets.Subscriptions
 {
