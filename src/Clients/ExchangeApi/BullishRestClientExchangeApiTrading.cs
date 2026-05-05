@@ -102,12 +102,13 @@ namespace Bullish.Net.Clients.ExchangeApi
         }
 
         /// <inheritdoc />
-        public Task<WebCallResult<BullishOrder[]>> GetOrderHistoryAsync(string tradingAccountId, DateTime? startTime = null, DateTime? endTime = null, string? symbol = null, string? orderId = null, string? clientOrderId = null, BullishTradeSide? side = null, BullishOrderStatus? status = null, CancellationToken ct = default)
+        public Task<WebCallResult<BullishPagedResult<BullishOrder>>> GetOrderHistoryAsync(string tradingAccountId, DateTime? startTime = null, DateTime? endTime = null, string? symbol = null, string? orderId = null, string? clientOrderId = null, BullishTradeSide? side = null, BullishOrderStatus? status = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default)
         {
             var parameters = new ParameterCollection
             {
                 { "tradingAccountId", tradingAccountId }
             };
+            BullishPaginationParameters.AddMetaData(parameters);
             parameters.AddOptional("symbol", symbol);
             parameters.AddOptional("orderId", orderId);
             parameters.AddOptional("clientOrderId", clientOrderId);
@@ -115,35 +116,39 @@ namespace Bullish.Net.Clients.ExchangeApi
             parameters.AddOptionalEnum("status", status);
             parameters.AddOptional("createdAtDatetime[gte]", startTime == null ? null : BullishParameterFormats.FormatDateTime(startTime.Value));
             parameters.AddOptional("createdAtDatetime[lte]", endTime == null ? null : BullishParameterFormats.FormatDateTime(endTime.Value));
+            BullishPaginationParameters.AddOptionalPagination(parameters, pageSize, nextPage, previousPage);
 
             var request = _definitions.GetOrCreate(HttpMethod.Get, "/v2/history/orders", BullishExchange.RateLimiter.Generic, 1, true);
-            return _baseClient.SendAsync<BullishOrder[]>(request, parameters, ct);
+            return _baseClient.SendAsync<BullishPagedResult<BullishOrder>>(request, parameters, ct);
         }
 
         /// <inheritdoc />
-        public Task<WebCallResult<BullishUserTrade[]>> GetTradesAsync(string tradingAccountId, string? symbol = null, string? orderId = null, string? clientOrderId = null, string? otcTradeId = null, string? clientOtcTradeId = null, CancellationToken ct = default)
+        public Task<WebCallResult<BullishPagedResult<BullishUserTrade>>> GetTradesAsync(string tradingAccountId, string? symbol = null, string? orderId = null, string? clientOrderId = null, string? otcTradeId = null, string? clientOtcTradeId = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default)
         {
             var parameters = new ParameterCollection
             {
                 { "tradingAccountId", tradingAccountId }
             };
+            BullishPaginationParameters.AddMetaData(parameters);
             parameters.AddOptional("symbol", symbol);
             parameters.AddOptional("orderId", orderId);
             parameters.AddOptional("clientOrderId", clientOrderId);
             parameters.AddOptional("otcTradeId", otcTradeId);
             parameters.AddOptional("clientOtcTradeId", clientOtcTradeId);
+            BullishPaginationParameters.AddOptionalPagination(parameters, pageSize, nextPage, previousPage);
 
             var request = _definitions.GetOrCreate(HttpMethod.Get, "/v1/trades", BullishExchange.RateLimiter.Generic, 1, true);
-            return _baseClient.SendAsync<BullishUserTrade[]>(request, parameters, ct);
+            return _baseClient.SendAsync<BullishPagedResult<BullishUserTrade>>(request, parameters, ct);
         }
 
         /// <inheritdoc />
-        public Task<WebCallResult<BullishUserTrade[]>> GetTradeHistoryAsync(string tradingAccountId, DateTime? startTime = null, DateTime? endTime = null, string? symbol = null, string? orderId = null, string? tradeId = null, string? clientOrderId = null, string? otcTradeId = null, string? clientOtcTradeId = null, CancellationToken ct = default)
+        public Task<WebCallResult<BullishPagedResult<BullishUserTrade>>> GetTradeHistoryAsync(string tradingAccountId, DateTime? startTime = null, DateTime? endTime = null, string? symbol = null, string? orderId = null, string? tradeId = null, string? clientOrderId = null, string? otcTradeId = null, string? clientOtcTradeId = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default)
         {
             var parameters = new ParameterCollection
             {
                 { "tradingAccountId", tradingAccountId }
             };
+            BullishPaginationParameters.AddMetaData(parameters);
             parameters.AddOptional("symbol", symbol);
             parameters.AddOptional("orderId", orderId);
             parameters.AddOptional("tradeId", tradeId);
@@ -152,9 +157,10 @@ namespace Bullish.Net.Clients.ExchangeApi
             parameters.AddOptional("createdAtDatetime[lte]", endTime == null ? null : BullishParameterFormats.FormatDateTime(endTime.Value));
             parameters.AddOptional("otcTradeId", otcTradeId);
             parameters.AddOptional("clientOtcTradeId", clientOtcTradeId);
+            BullishPaginationParameters.AddOptionalPagination(parameters, pageSize, nextPage, previousPage);
 
             var request = _definitions.GetOrCreate(HttpMethod.Get, "/v1/history/trades", BullishExchange.RateLimiter.Generic, 1, true);
-            return _baseClient.SendAsync<BullishUserTrade[]>(request, parameters, ct);
+            return _baseClient.SendAsync<BullishPagedResult<BullishUserTrade>>(request, parameters, ct);
         }
 
     }

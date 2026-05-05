@@ -35,19 +35,19 @@ namespace Bullish.Net.Interfaces.Clients.ExchangeApi
         Task<WebCallResult<BullishOrder>> GetOrderByClientOrderIdAsync(string tradingAccountId, string clientOrderId, CancellationToken ct = default);
 
         /// <summary>
-        /// Get historical orders. <para><a href="https://docs.exchange.bullish.com/rest/api/trade-get-orders-history-v-2" /></para>
+        /// Get historical orders. <para><a href="https://docs.exchange.bullish.com/rest/api/get-orders-history-v-2" /></para>
         /// </summary>
-        Task<WebCallResult<BullishOrder[]>> GetOrderHistoryAsync(string tradingAccountId, DateTime? startTime = null, DateTime? endTime = null, string? symbol = null, string? orderId = null, string? clientOrderId = null, BullishTradeSide? side = null, BullishOrderStatus? status = null, CancellationToken ct = default);
+        Task<WebCallResult<BullishPagedResult<BullishOrder>>> GetOrderHistoryAsync(string tradingAccountId, DateTime? startTime = null, DateTime? endTime = null, string? symbol = null, string? orderId = null, string? clientOrderId = null, BullishTradeSide? side = null, BullishOrderStatus? status = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default);
 
         /// <summary>
         /// Get current trades. <para><a href="https://docs.exchange.bullish.com/rest/api/get-trades" /></para>
         /// </summary>
-        Task<WebCallResult<BullishUserTrade[]>> GetTradesAsync(string tradingAccountId, string? symbol = null, string? orderId = null, string? clientOrderId = null, string? otcTradeId = null, string? clientOtcTradeId = null, CancellationToken ct = default);
+        Task<WebCallResult<BullishPagedResult<BullishUserTrade>>> GetTradesAsync(string tradingAccountId, string? symbol = null, string? orderId = null, string? clientOrderId = null, string? otcTradeId = null, string? clientOtcTradeId = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default);
 
         /// <summary>
         /// Get historical trades. <para><a href="https://docs.exchange.bullish.com/rest/api/get-trades-history" /></para>
         /// </summary>
-        Task<WebCallResult<BullishUserTrade[]>> GetTradeHistoryAsync(string tradingAccountId, DateTime? startTime = null, DateTime? endTime = null, string? symbol = null, string? orderId = null, string? tradeId = null, string? clientOrderId = null, string? otcTradeId = null, string? clientOtcTradeId = null, CancellationToken ct = default);
+        Task<WebCallResult<BullishPagedResult<BullishUserTrade>>> GetTradeHistoryAsync(string tradingAccountId, DateTime? startTime = null, DateTime? endTime = null, string? symbol = null, string? orderId = null, string? tradeId = null, string? clientOrderId = null, string? otcTradeId = null, string? clientOtcTradeId = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default);
 
     }
 }

@@ -97,7 +97,7 @@ namespace Bullish.Net.Clients.ExchangeApi
             return _baseClient.SendAsync<BullishMmpConfigurationResult>(request, parameters, ct);
         }
 
-        public Task<WebCallResult<BullishBorrowInterest[]>> GetBorrowInterestHistoryAsync(string asset, DateTime startTime, DateTime endTime, string? tradingAccountId = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default)
+        public Task<WebCallResult<BullishPagedResult<BullishBorrowInterest>>> GetBorrowInterestHistoryAsync(string asset, DateTime startTime, DateTime endTime, string? tradingAccountId = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default)
         {
             var parameters = new ParameterCollection
             {
@@ -105,13 +105,13 @@ namespace Bullish.Net.Clients.ExchangeApi
                 { "createdAtDatetime[gte]", BullishParameterFormats.FormatDateTime(startTime) },
                 { "createdAtDatetime[lte]", BullishParameterFormats.FormatDateTime(endTime) }
             };
-            AddOptionalHistoryParameters(parameters, tradingAccountId, pageSize, nextPage, previousPage);
+            BullishPaginationParameters.AddOptionalHistory(parameters, tradingAccountId, pageSize, nextPage, previousPage);
 
             var request = _definitions.GetOrCreate(HttpMethod.Get, "/v1/history/borrow-interest", BullishExchange.RateLimiter.Generic, 1, true);
-            return _baseClient.SendAsync<BullishBorrowInterest[]>(request, parameters, ct);
+            return _baseClient.SendAsync<BullishPagedResult<BullishBorrowInterest>>(request, parameters, ct);
         }
 
-        public Task<WebCallResult<BullishDerivativeSettlement[]>> GetDerivativeSettlementHistoryAsync(DateTime startTime, DateTime endTime, string? tradingAccountId = null, string? symbol = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default)
+        public Task<WebCallResult<BullishPagedResult<BullishDerivativeSettlement>>> GetDerivativeSettlementHistoryAsync(DateTime startTime, DateTime endTime, string? tradingAccountId = null, string? symbol = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default)
         {
             var parameters = new ParameterCollection
             {
@@ -119,13 +119,13 @@ namespace Bullish.Net.Clients.ExchangeApi
                 { "settlementDatetime[lte]", BullishParameterFormats.FormatDateTime(endTime) }
             };
             parameters.AddOptional("symbol", symbol);
-            AddOptionalHistoryParameters(parameters, tradingAccountId, pageSize, nextPage, previousPage);
+            BullishPaginationParameters.AddOptionalHistory(parameters, tradingAccountId, pageSize, nextPage, previousPage);
 
             var request = _definitions.GetOrCreate(HttpMethod.Get, "/v1/history/derivatives-settlement", BullishExchange.RateLimiter.Generic, 1, true);
-            return _baseClient.SendAsync<BullishDerivativeSettlement[]>(request, parameters, ct);
+            return _baseClient.SendAsync<BullishPagedResult<BullishDerivativeSettlement>>(request, parameters, ct);
         }
 
-        public Task<WebCallResult<BullishTransfer[]>> GetTransferHistoryAsync(DateTime startTime, DateTime endTime, string? tradingAccountId = null, string? status = null, string? requestId = null, string? asset = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default)
+        public Task<WebCallResult<BullishPagedResult<BullishTransfer>>> GetTransferHistoryAsync(DateTime startTime, DateTime endTime, string? tradingAccountId = null, string? status = null, string? requestId = null, string? asset = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default)
         {
             var parameters = new ParameterCollection
             {
@@ -135,10 +135,10 @@ namespace Bullish.Net.Clients.ExchangeApi
             parameters.AddOptional("status", status);
             parameters.AddOptional("requestId", requestId);
             parameters.AddOptional("assetSymbol", asset);
-            AddOptionalHistoryParameters(parameters, tradingAccountId, pageSize, nextPage, previousPage);
+            BullishPaginationParameters.AddOptionalHistory(parameters, tradingAccountId, pageSize, nextPage, previousPage);
 
             var request = _definitions.GetOrCreate(HttpMethod.Get, "/v1/history/transfer", BullishExchange.RateLimiter.Generic, 1, true);
-            return _baseClient.SendAsync<BullishTransfer[]>(request, parameters, ct);
+            return _baseClient.SendAsync<BullishPagedResult<BullishTransfer>>(request, parameters, ct);
         }
 
         public Task<WebCallResult<BullishPagedResult<BullishCustodyTransaction>>> GetCustodyTransactionHistoryAsync(DateTime? startTime = null, DateTime? endTime = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default)
@@ -146,7 +146,8 @@ namespace Bullish.Net.Clients.ExchangeApi
             var parameters = new ParameterCollection();
             parameters.AddOptional("createdAtDatetime[gte]", startTime == null ? null : BullishParameterFormats.FormatDateTime(startTime.Value));
             parameters.AddOptional("createdAtDatetime[lte]", endTime == null ? null : BullishParameterFormats.FormatDateTime(endTime.Value));
-            AddOptionalPaginationParameters(parameters, pageSize, nextPage, previousPage);
+            BullishPaginationParameters.AddMetaData(parameters);
+            BullishPaginationParameters.AddOptionalPagination(parameters, pageSize, nextPage, previousPage);
 
             var request = _definitions.GetOrCreate(HttpMethod.Get, "/v1/wallets/transactions", BullishExchange.RateLimiter.Generic, 1, true);
             return _baseClient.SendAsync<BullishPagedResult<BullishCustodyTransaction>>(request, parameters, ct);
@@ -217,17 +218,5 @@ namespace Bullish.Net.Clients.ExchangeApi
             return _baseClient.SendAsync(request, null, ct);
         }
 
-        private static void AddOptionalHistoryParameters(ParameterCollection parameters, string? tradingAccountId, int? pageSize, string? nextPage, string? previousPage)
-        {
-            parameters.AddOptional("tradingAccountId", tradingAccountId);
-            AddOptionalPaginationParameters(parameters, pageSize, nextPage, previousPage);
-        }
-
-        private static void AddOptionalPaginationParameters(ParameterCollection parameters, int? pageSize, string? nextPage, string? previousPage)
-        {
-            parameters.AddOptional("_pageSize", pageSize);
-            parameters.AddOptional("_nextPage", nextPage);
-            parameters.AddOptional("_previousPage", previousPage);
-        }
     }
 }

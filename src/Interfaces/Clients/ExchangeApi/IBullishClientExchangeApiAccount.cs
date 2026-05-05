@@ -57,17 +57,17 @@ namespace Bullish.Net.Interfaces.Clients.ExchangeApi
         /// <summary>
         /// <a href="https://docs.exchange.bullish.com/rest/api/get-borrow-interest-history" />
         /// </summary>
-        Task<WebCallResult<BullishBorrowInterest[]>> GetBorrowInterestHistoryAsync(string asset, DateTime startTime, DateTime endTime, string? tradingAccountId = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default);
+        Task<WebCallResult<BullishPagedResult<BullishBorrowInterest>>> GetBorrowInterestHistoryAsync(string asset, DateTime startTime, DateTime endTime, string? tradingAccountId = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default);
 
         /// <summary>
         /// <a href="https://docs.exchange.bullish.com/rest/api/get-derivatives-settlement-history" />
         /// </summary>
-        Task<WebCallResult<BullishDerivativeSettlement[]>> GetDerivativeSettlementHistoryAsync(DateTime startTime, DateTime endTime, string? tradingAccountId = null, string? symbol = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default);
+        Task<WebCallResult<BullishPagedResult<BullishDerivativeSettlement>>> GetDerivativeSettlementHistoryAsync(DateTime startTime, DateTime endTime, string? tradingAccountId = null, string? symbol = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default);
 
         /// <summary>
         /// <a href="https://docs.exchange.bullish.com/rest/api/get-transfer-history" />
         /// </summary>
-        Task<WebCallResult<BullishTransfer[]>> GetTransferHistoryAsync(DateTime startTime, DateTime endTime, string? tradingAccountId = null, string? status = null, string? requestId = null, string? asset = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default);
+        Task<WebCallResult<BullishPagedResult<BullishTransfer>>> GetTransferHistoryAsync(DateTime startTime, DateTime endTime, string? tradingAccountId = null, string? status = null, string? requestId = null, string? asset = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default);
 
         /// <summary>
         /// <a href="https://docs.exchange.bullish.com/rest/api/get-custody-transaction-history" />
