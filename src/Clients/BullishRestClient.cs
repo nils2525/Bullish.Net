@@ -25,7 +25,7 @@ namespace Bullish.Net.Clients
         #region constructor/destructor
 
         /// <summary>
-        /// Create a new instance of the CryptoComRestClient using provided options
+        /// Create a new instance of the BullishRestClient using provided options
         /// </summary>
         /// <param name="optionsDelegate">Option configuration delegate</param>
         public BullishRestClient(Action<BullishRestOptions>? optionsDelegate = null)
@@ -34,7 +34,7 @@ namespace Bullish.Net.Clients
         }
 
         /// <summary>
-        /// Create a new instance of the CryptoComRestClient using provided options
+        /// Create a new instance of the BullishRestClient using provided options
         /// </summary>
         /// <param name="options">Option configuration</param>
         /// <param name="loggerFactory">The logger factory</param>

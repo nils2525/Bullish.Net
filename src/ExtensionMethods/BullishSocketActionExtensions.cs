@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Bullish.Net.Enums;
+﻿using Bullish.Net.Enums;
 using CryptoExchange.Net.Objects;
 
-namespace Bitrue.Net.ExtensionMethods
+namespace Bullish.Net.ExtensionMethods
 {
-    public static  class BullishSocketActionExtensions
+    public static class BullishSocketActionExtensions
     {
-        public static SocketUpdateType ToCEN(this BullishSocketAction action)
+        public static SocketUpdateType ToSocketUpdateType(this BullishSocketAction action)
             => action switch
             {
                 BullishSocketAction.Snapshot => SocketUpdateType.Snapshot,

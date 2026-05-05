@@ -12,17 +12,19 @@ namespace Bullish.Net.Objects.Sockets.Subscriptions
     {
         private readonly string _channel;
         private readonly string? _symbol;
+        private readonly string? _tradingAccountId;
         private readonly Action<DateTime, string?, BullishSubscriptionEvent<T>> _handler;
 
         /// <summary>
         /// ctor
         /// </summary>
-        public BullishSubscription(ILogger logger, string channel, string? symbol, Action<DateTime, string?, BullishSubscriptionEvent<T>> handler, bool auth, string listenChannel) : base(logger, auth)
+        public BullishSubscription(ILogger logger, string channel, string? symbol, Action<DateTime, string?, BullishSubscriptionEvent<T>> handler, bool auth, string listenChannel, string? tradingAccountId = null) : base(logger, auth)
         {
             _handler = handler;
             _channel = channel;
             _symbol = symbol;
-            Topic = $"{listenChannel}#{symbol}";
+            _tradingAccountId = tradingAccountId;
+            Topic = $"{listenChannel}#{symbol ?? tradingAccountId}";
 
             MessageRouter = symbol != null ?
                 MessageRouter.CreateWithTopicFilter<BullishSubscriptionEvent<T>>(listenChannel, symbol, DoHandleMessage) :
@@ -37,6 +39,7 @@ namespace Bullish.Net.Objects.Sockets.Subscriptions
                 { "topic", _channel }
             };
             parameters.AddOptional("symbol", _symbol);
+            parameters.AddOptional("tradingAccountId", _tradingAccountId);
 
             return new BullishQuerySubscription(new BullishSocketRequest
             {
@@ -53,6 +56,7 @@ namespace Bullish.Net.Objects.Sockets.Subscriptions
                 { "topic", _channel }
             };
             parameters.AddOptional("symbol", _symbol);
+            parameters.AddOptional("tradingAccountId", _tradingAccountId);
 
             return new BullishQuerySubscription(new BullishSocketRequest
             {

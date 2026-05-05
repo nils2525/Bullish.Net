@@ -28,7 +28,7 @@ namespace Bullish.Net.Clients
         #region constructor/destructor
 
         /// <summary>
-        /// Create a new instance of CryptoComSocketClient
+        /// Create a new instance of BullishSocketClient
         /// </summary>
         /// <param name="optionsDelegate">Option configuration delegate</param>
         public BullishSocketClient(Action<BullishSocketOptions>? optionsDelegate = null)
@@ -37,7 +37,7 @@ namespace Bullish.Net.Clients
         }
 
         /// <summary>
-        /// Create a new instance of CryptoComSocketClient
+        /// Create a new instance of BullishSocketClient
         /// </summary>
         /// <param name="loggerFactory">The logger factory</param>
         /// <param name="options">Option configuration</param>

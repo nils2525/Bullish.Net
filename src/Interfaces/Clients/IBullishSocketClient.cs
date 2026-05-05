@@ -7,7 +7,7 @@ using CryptoExchange.Net.Interfaces.Clients;
 namespace Bullish.Net.Interfaces.Clients
 {
     /// <summary>
-    /// Client for accessing the CryptoCom websocket API
+    /// Client for accessing the Bullish websocket API
     /// </summary>
     public interface IBullishSocketClient : ISocketClient<HMACCredential>
     {

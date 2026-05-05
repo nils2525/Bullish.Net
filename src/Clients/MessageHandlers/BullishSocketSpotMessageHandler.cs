@@ -14,8 +14,12 @@ namespace Bullish.Net.Clients.MessageHandlers
 {
     internal class BullishSocketSpotMessageHandler : JsonSocketMessageHandler
     {
+        /// <inheritdoc />
         public override JsonSerializerOptions Options { get; } = SerializerOptions.WithConverters(BullishExchange.SerializerContext);
 
+        /// <summary>
+        /// Create a new socket message handler
+        /// </summary>
         public BullishSocketSpotMessageHandler()
         {
             AddTopicMapping<BullishSubscriptionEvent<BullishTradeSocketData>>(c => c.Data.Symbol);
@@ -23,6 +27,7 @@ namespace Bullish.Net.Clients.MessageHandlers
             AddTopicMapping<BullishSubscriptionEvent<BullishTicker>>(c => c.Data.Symbol);
         }
 
+        /// <inheritdoc />
         protected override MessageTypeDefinition[] TypeEvaluators { get; } = [
             new MessageTypeDefinition {
                 Fields = [new PropertyFieldReference("error")],

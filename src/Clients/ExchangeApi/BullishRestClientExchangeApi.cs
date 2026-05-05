@@ -51,8 +51,17 @@ namespace Bullish.Net.Clients.ExchangeApi
         internal Task<WebCallResult<T>> SendAsync<T>(RequestDefinition definition, ParameterCollection? parameters, CancellationToken cancellationToken, int? weight = null) where T : class
             => SendToAddressAsync<T>(BaseAddress, definition, parameters, cancellationToken, weight);
 
+        internal async Task<WebCallResult> SendAsync(RequestDefinition definition, ParameterCollection? parameters, CancellationToken cancellationToken, int? weight = null)
+        {
+            var result = await SendToAddressAsync<object>(BaseAddress, definition, parameters, cancellationToken, weight).ConfigureAwait(false);
+            return result.AsDataless();
+        }
+
         internal async Task<WebCallResult<T>> SendToAddressAsync<T>(string baseAddress, RequestDefinition definition, ParameterCollection? parameters, CancellationToken cancellationToken, int? weight = null) where T : class
         {
+            if (definition.Authenticated && definition.Path != "/v1/users/hmac/login" && AuthenticationProvider != null)
+                await AuthenticationProvider!.EnsureAuthorizedAsync(ClientOptions.Environment).ConfigureAwait(false);
+
             var result = await base.SendAsync<T>(baseAddress, definition, parameters, cancellationToken, null, weight).ConfigureAwait(false);
             if (!result)
                 return result.As<T>(default);

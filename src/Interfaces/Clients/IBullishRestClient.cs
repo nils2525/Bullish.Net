@@ -7,7 +7,7 @@ using CryptoExchange.Net.Interfaces.Clients;
 namespace Bullish.Net.Interfaces.Clients
 {
     /// <summary>
-    /// Client for accessing the CryptoCom Rest API. 
+    /// Client for accessing the Bullish Rest API
     /// </summary>
     public interface IBullishRestClient : IRestClient<HMACCredential>
     {

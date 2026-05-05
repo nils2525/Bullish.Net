@@ -4,7 +4,7 @@ using CryptoExchange.Net.Objects.Options;
 namespace Bullish.Net.Objects.Options
 {
     /// <summary>
-    /// Options for the CryptoComSocketClient
+    /// Options for the BullishSocketClient
     /// </summary>
     public class BullishSocketOptions : SocketExchangeOptions<BullishEnvironment, HMACCredential>
     {

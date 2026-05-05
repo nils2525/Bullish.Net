@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
-using Bitrue.Net.ExtensionMethods;
 using Bullish.Net.Clients.MessageHandlers;
+using Bullish.Net.ExtensionMethods;
 using Bullish.Net.Interfaces.Clients.ExchangeApi;
 using Bullish.Net.Objects.Internal;
 using Bullish.Net.Objects.Models;
@@ -24,7 +24,7 @@ using Microsoft.Extensions.Logging;
 namespace Bullish.Net.Clients.ExchangeApi
 {
     /// <summary>
-    /// Client providing access to the CryptoCom Exchange websocket Api
+    /// Client providing access to the Bullish Exchange websocket Api
     /// </summary>
     internal partial class BullishSocketClientExchangeApi : SocketApiClient<BullishEnvironment, BullishAuthenticationProvider, HMACCredential>, IBullishSocketClientExchangeApi
     {
@@ -66,14 +66,14 @@ namespace Bullish.Net.Clients.ExchangeApi
             var parameters = base.GetWebSocketParameters(address);
 
             if (AuthenticationProvider != null)
-                ((BullishAuthenticationProvider)AuthenticationProvider!).SetAuthHeaders(parameters.Headers);
+                ((BullishAuthenticationProvider)AuthenticationProvider!).SetSocketAuthHeaders(parameters.Headers);
 
             return parameters;
         }
 
         protected override async Task<CallResult<SocketConnection>> GetSocketConnection(string address, bool authenticated, bool dedicatedRequestConnection, CancellationToken ct, string? topic = null, int individualSubscriptionCount = 1)
         {
-            if (authenticated)
+            if (authenticated && AuthenticationProvider != null)
                 await ((BullishAuthenticationProvider)AuthenticationProvider!).EnsureAuthorizedAsync(ClientOptions.Environment).ConfigureAwait(false);
 
             return await base.GetSocketConnection(address, authenticated, dedicatedRequestConnection, ct, topic);
@@ -89,7 +89,7 @@ namespace Bullish.Net.Clients.ExchangeApi
 
                 onMessage(
                     new DataEvent<BullishTicker>(BullishExchange.ExchangeName, data.Data, receiveTime, originalData)
-                        .WithUpdateType(data.Action.ToCEN())
+                        .WithUpdateType(data.Action.ToSocketUpdateType())
                         .WithSymbol(data.Data.Symbol)
                         .WithStreamId(data.Channel)
                         .WithDataTimestamp(timestamp, GetTimeOffset())
@@ -111,7 +111,7 @@ namespace Bullish.Net.Clients.ExchangeApi
 
                 onMessage(
                     new DataEvent<BullishTrade[]>(BullishExchange.ExchangeName, data.Data.Trades, receiveTime, originalData)
-                        .WithUpdateType(data.Action.ToCEN())
+                        .WithUpdateType(data.Action.ToSocketUpdateType())
                         .WithSymbol(data.Data.Symbol)
                         .WithStreamId(data.Channel)
                         .WithDataTimestamp(timestamp, GetTimeOffset())
@@ -134,7 +134,7 @@ namespace Bullish.Net.Clients.ExchangeApi
 
                 onMessage(
                     new DataEvent<BullishOrderBook>(BullishExchange.ExchangeName, data.Data, receiveTime, originalData)
-                        .WithUpdateType(data.Action.ToCEN())
+                        .WithUpdateType(data.Action.ToSocketUpdateType())
                         .WithSymbol(data.Data.Symbol)
                         .WithStreamId(data.Channel)
                         .WithDataTimestamp(timestamp, GetTimeOffset())
@@ -144,6 +144,75 @@ namespace Bullish.Net.Clients.ExchangeApi
             var subscription = new BullishSubscription<BullishOrderBook>(_logger, topic, symbol, internalHandler, false, listenChannel);
             return SubscribeAsync(BaseAddress.AppendPath("/trading-api/v1/market-data/orderbook"), subscription, ct);
         }
+
+        /// <inheritdoc />
+        public Task<CallResult<UpdateSubscription>> SubscribeToAssetAccountUpdatesAsync(string tradingAccountId, Action<DataEvent<BullishAccountAsset[]>> onMessage, CancellationToken ct = default)
+        {
+            var internalHandler = new Action<DateTime, string?, BullishSubscriptionEvent<BullishAccountAsset[]>>((receiveTime, originalData, data) =>
+            {
+                var timestamp = data.Data.Length == 0 ? (DateTime?)null : data.Data.Max(c => c.PublishedAtTimestamp ?? c.UpdatedAtTimestamp);
+                if (timestamp != null)
+                    UpdateTimeOffset(timestamp.Value);
+
+                var dataEvent = new DataEvent<BullishAccountAsset[]>(BullishExchange.ExchangeName, data.Data, receiveTime, originalData)
+                    .WithUpdateType(data.Action.ToSocketUpdateType())
+                    .WithStreamId(data.Channel);
+
+                if (timestamp != null)
+                    dataEvent = dataEvent.WithDataTimestamp(timestamp.Value, GetTimeOffset());
+
+                onMessage(dataEvent);
+            });
+
+            var subscription = new BullishSubscription<BullishAccountAsset[]>(_logger, "assetAccounts", null, internalHandler, true, "V1TAAssetAccount", tradingAccountId);
+            return SubscribeAsync(ClientOptions.Environment.SocketClientPrivateAddress.AppendPath("/trading-api/v1/private-data"), subscription, ct);
+        }
+
+        /// <inheritdoc />
+        public Task<CallResult<UpdateSubscription>> SubscribeToOrderUpdatesAsync(string tradingAccountId, Action<DataEvent<BullishOrder[]>> onMessage, CancellationToken ct = default)
+        {
+            var internalHandler = new Action<DateTime, string?, BullishSubscriptionEvent<BullishOrder[]>>((receiveTime, originalData, data) =>
+            {
+                var timestamp = data.Data.Length == 0 ? (DateTime?)null : data.Data.Max(c => c.PublishedAtTimestamp ?? c.CreatedAtTimestamp);
+                if (timestamp != null)
+                    UpdateTimeOffset(timestamp.Value);
+
+                var dataEvent = new DataEvent<BullishOrder[]>(BullishExchange.ExchangeName, data.Data, receiveTime, originalData)
+                    .WithUpdateType(data.Action.ToSocketUpdateType())
+                    .WithStreamId(data.Channel);
+
+                if (timestamp != null)
+                    dataEvent = dataEvent.WithDataTimestamp(timestamp.Value, GetTimeOffset());
+
+                onMessage(dataEvent);
+            });
+
+            var subscription = new BullishSubscription<BullishOrder[]>(_logger, "orders", null, internalHandler, true, "V1TAOrder", tradingAccountId);
+            return SubscribeAsync(ClientOptions.Environment.SocketClientPrivateAddress.AppendPath("/trading-api/v1/private-data"), subscription, ct);
+        }
+
+        /// <inheritdoc />
+        public Task<CallResult<UpdateSubscription>> SubscribeToUserTradeUpdatesAsync(string tradingAccountId, Action<DataEvent<BullishUserTrade[]>> onMessage, CancellationToken ct = default)
+        {
+            var internalHandler = new Action<DateTime, string?, BullishSubscriptionEvent<BullishUserTrade[]>>((receiveTime, originalData, data) =>
+            {
+                var timestamp = data.Data.Length == 0 ? (DateTime?)null : data.Data.Max(c => c.PublishedAtTimestamp ?? c.CreatedAtTimestamp);
+                if (timestamp != null)
+                    UpdateTimeOffset(timestamp.Value);
+
+                var dataEvent = new DataEvent<BullishUserTrade[]>(BullishExchange.ExchangeName, data.Data, receiveTime, originalData)
+                    .WithUpdateType(data.Action.ToSocketUpdateType())
+                    .WithStreamId(data.Channel);
+
+                if (timestamp != null)
+                    dataEvent = dataEvent.WithDataTimestamp(timestamp.Value, GetTimeOffset());
+
+                onMessage(dataEvent);
+            });
+
+            var subscription = new BullishSubscription<BullishUserTrade[]>(_logger, "trades", null, internalHandler, true, "V1TATrade", tradingAccountId);
+            return SubscribeAsync(ClientOptions.Environment.SocketClientPrivateAddress.AppendPath("/trading-api/v1/private-data"), subscription, ct);
+        }
         #endregion
 
         #region Queries
@@ -151,16 +220,7 @@ namespace Bullish.Net.Clients.ExchangeApi
 
         /// <inheritdoc />
         protected override Task<Query?> GetAuthenticationRequestAsync(SocketConnection connection)
-        {
-            throw new NotImplementedException();
-            //var authProvider = (BullishAuthenticationProvider)AuthenticationProvider!;
-            //var authParams = authProvider.AuthenticateSocket();
-            //return Task.FromResult<Query?>(new BullishQuery<BullishSocketAuthResponse>(new("subscribe")
-            //{
-            //    Channels = ["auth"],
-            //    Parameters = authParams
-            //}, "auth", false, 1));
-        }
+            => Task.FromResult<Query?>(null);
 
         public override async Task UnsubscribeAsync(UpdateSubscription subscription)
         {

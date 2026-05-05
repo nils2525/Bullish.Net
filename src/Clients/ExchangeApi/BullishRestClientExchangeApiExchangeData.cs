@@ -23,6 +23,9 @@ namespace Bullish.Net.Clients.ExchangeApi
         {
             var request = _definitions.GetOrCreate(HttpMethod.Get, "/v1/time", BullishExchange.RateLimiter.Generic, 1, false);
             var result = await _baseClient.SendAsync<BullishTimestamp>(request, null, ct).ConfigureAwait(false);
+            if (!result)
+                return result.As<DateTime>(default);
+
             return result.As(result.Data.Timestamp);
         }
 

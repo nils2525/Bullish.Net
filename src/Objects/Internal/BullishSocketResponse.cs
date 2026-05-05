@@ -2,45 +2,21 @@
 
 namespace Bullish.Net.Objects.Internal
 {
+    /// <summary>
+    /// Bullish socket response
+    /// </summary>
     internal class BullishSocketResponse : BullishSocketResponseBase
     {
+        /// <summary>
+        /// ["<c>result</c>"] Subscription result
+        /// </summary>
         [JsonPropertyName("result")]
         public BullishSubscriptionResult? Result { get; set; }
 
+        /// <summary>
+        /// ["<c>error</c>"] Error response
+        /// </summary>
         [JsonPropertyName("error")]
         public BullishError? Error { get; set; }
-    }
-
-    internal abstract class BullishSocketResponseBase
-    {
-        [JsonPropertyName("id")]
-        public string? Id { get; set; }
-    }
-
-    internal class BullishSubscriptionResult
-    {
-        [JsonPropertyName("responseCode")]
-        public int ResponseCode { get; set; }
-
-        [JsonPropertyName("responseCodeName")]
-        public string ResponseCodeName { get; set; } = string.Empty;
-
-        [JsonPropertyName("message")]
-        public string Message { get; set; } = string.Empty;
-    }
-
-    internal class BullishError
-    {
-        [JsonPropertyName("code")]
-        public int Code { get; set; }
-
-        [JsonPropertyName("errorCode")]
-        public int ErrorCode { get; set; }
-
-        [JsonPropertyName("errorCodeName")]
-        public string ErrorCodeName { get; set; } = string.Empty;
-
-        [JsonPropertyName("message")]
-        public string Message { get; set; } = string.Empty;
     }
 }

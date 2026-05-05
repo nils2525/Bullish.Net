@@ -4,7 +4,7 @@ using CryptoExchange.Net.Objects;
 namespace Bullish.Net
 {
     /// <summary>
-    /// CryptoCom environments
+    /// Bullish environments
     /// </summary>
     public class BullishEnvironment : TradeEnvironment
     {
@@ -18,14 +18,21 @@ namespace Bullish.Net
         /// </summary>
         public string SocketClientAddress { get; }
 
+        /// <summary>
+        /// Private Socket API address
+        /// </summary>
+        public string SocketClientPrivateAddress { get; }
+
         internal BullishEnvironment(
             string name,
             string restAddress,
-            string streamAddress) :
+            string streamAddress,
+            string? privateStreamAddress = null) :
             base(name)
         {
             RestClientAddress = restAddress;
             SocketClientAddress = streamAddress;
+            SocketClientPrivateAddress = privateStreamAddress ?? streamAddress;
         }
 
         /// <summary>
@@ -37,7 +44,7 @@ namespace Bullish.Net
         { }
 
         /// <summary>
-        /// Get the CryptoCom environment by name
+        /// Get the Bullish environment by name
         /// </summary>
         public static BullishEnvironment? GetEnvironmentByName(string? name)
          => name switch
@@ -54,7 +61,8 @@ namespace Bullish.Net
         public static BullishEnvironment Live { get; }
             = new BullishEnvironment(TradeEnvironmentNames.Live,
                                      BullishApiAddresses.Default.RestClientAddress,
-                                     BullishApiAddresses.Default.SocketClientPublicAddress);
+                                     BullishApiAddresses.Default.SocketClientPublicAddress,
+                                     BullishApiAddresses.Default.SocketClientPrivateAddress);
 
         /// <summary>
         /// Create a custom environment
@@ -66,7 +74,8 @@ namespace Bullish.Net
         public static BullishEnvironment CreateCustom(
                         string name,
                         string spotRestAddress,
-                        string spotSocketStreamsAddress)
-            => new BullishEnvironment(name, spotRestAddress, spotSocketStreamsAddress);
+                        string spotSocketStreamsAddress,
+                        string? spotSocketPrivateAddress = null)
+            => new BullishEnvironment(name, spotRestAddress, spotSocketStreamsAddress, spotSocketPrivateAddress);
     }
 }

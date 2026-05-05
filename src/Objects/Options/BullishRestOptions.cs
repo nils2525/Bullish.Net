@@ -4,10 +4,13 @@ using CryptoExchange.Net.Objects.Options;
 namespace Bullish.Net.Objects.Options
 {
     /// <summary>
-    /// Options for the CryptoComRestClient
+    /// Options for the BullishRestClient
     /// </summary>
     public class BullishRestOptions : RestExchangeOptions<BullishEnvironment, HMACCredential>
     {
+        /// <summary>
+        /// Request receive window
+        /// </summary>
         public TimeSpan ReceiveWindow { get; set; } = TimeSpan.FromSeconds(5);
 
         /// <summary>

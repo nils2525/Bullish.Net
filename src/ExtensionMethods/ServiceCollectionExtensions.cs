@@ -108,6 +108,12 @@ namespace Microsoft.Extensions.DependencyInjection
                 return LibraryHelpers.CreateHttpClientMessageHandler(options);
             }).SetHandlerLifetime(Timeout.InfiniteTimeSpan);
             services.Add(new ServiceDescriptor(typeof(IBullishSocketClient), x => { return new BullishSocketClient(x.GetRequiredService<IOptions<BullishSocketOptions>>(), x.GetRequiredService<ILoggerFactory>()); }, socketClientLifeTime ?? ServiceLifetime.Singleton));
+            services.AddSingleton<IBullishUserClientProvider, BullishUserClientProvider>(x =>
+                new BullishUserClientProvider(
+                    x.GetRequiredService<IHttpClientFactory>().CreateClient(typeof(IBullishRestClient).Name),
+                    x.GetRequiredService<ILoggerFactory>(),
+                    x.GetRequiredService<IOptions<BullishRestOptions>>(),
+                    x.GetRequiredService<IOptions<BullishSocketOptions>>()));
 
 
             return services;

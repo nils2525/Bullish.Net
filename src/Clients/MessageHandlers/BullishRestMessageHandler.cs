@@ -14,8 +14,10 @@ namespace Bullish.Net.Clients.MessageHandlers
 {
     internal class BullishRestMessageHandler : JsonRestMessageHandler
     {
+        /// <inheritdoc />
         public override JsonSerializerOptions Options { get; } = SerializerOptions.WithConverters(BullishExchange.SerializerContext);
 
+        /// <inheritdoc />
         public override async ValueTask<Error> ParseErrorResponse(int httpStatusCode, HttpResponseHeaders responseHeaders, Stream responseStream)
         {
             var (parseError, document) = await GetJsonDocument(responseStream).ConfigureAwait(false);
