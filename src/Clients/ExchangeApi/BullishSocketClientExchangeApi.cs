@@ -19,6 +19,7 @@ using CryptoExchange.Net.Objects.Sockets;
 using CryptoExchange.Net.SharedApis;
 using CryptoExchange.Net.Sockets;
 using CryptoExchange.Net.Sockets.Default;
+using CryptoExchange.Net.Sockets.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace Bullish.Net.Clients.ExchangeApi
@@ -77,6 +78,22 @@ namespace Bullish.Net.Clients.ExchangeApi
                 await ((BullishAuthenticationProvider)AuthenticationProvider!).EnsureAuthorizedAsync(ClientOptions.Environment).ConfigureAwait(false);
 
             return await base.GetSocketConnection(address, authenticated, dedicatedRequestConnection, ct, topic);
+        }
+
+        // Bullish can invalidate a JWT server-side before its 24h TTL is up. When that happens
+        // the WS handshake returns 401 and the reconnect loop spins with the same stale cookie
+        // until the local cache finally expires. Force a fresh login on every authenticated
+        // reconnect so the handshake always uses a server-valid token.
+        protected override async Task<Uri?> GetReconnectUriAsync(ISocketConnection connection)
+        {
+            if (connection.HasAuthenticatedSubscription && AuthenticationProvider != null)
+            {
+                var authProvider = (BullishAuthenticationProvider)AuthenticationProvider!;
+                authProvider.ClearAuthorization();
+                await authProvider.EnsureAuthorizedAsync(ClientOptions.Environment, forceRefresh: true).ConfigureAwait(false);
+            }
+
+            return await base.GetReconnectUriAsync(connection).ConfigureAwait(false);
         }
 
         /// <inheritdoc />

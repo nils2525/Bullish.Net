@@ -10,9 +10,17 @@ namespace Bullish.Net
 {
     internal class BullishAuthenticationProvider : AuthenticationProvider<HMACCredential>
     {
+        // JWTs are valid for 24h server-side. Use a shorter local TTL so cache rot during
+        // normal operation is bounded; reconnect-driven refresh (see BullishSocketClientExchangeApi)
+        // handles the case where the server invalidates a token earlier than its declared TTL.
+        private static readonly TimeSpan JwtTtl = TimeSpan.FromHours(12);
+
         private static object _nonceLock = new();
         private static long _lastLoginNonce = 0;
         private static long _lastSignedRequestNonce = 0;
+
+        private readonly object _authLock = new();
+        private readonly List<IDictionary<string, string>> _trackedSocketHeaders = new();
 
         private BullishAuthResponse? _authData = null;
         private DateTime _jwtValidUntil = DateTime.MinValue;
@@ -100,26 +108,52 @@ namespace Bullish.Net
 
         public void SetSocketAuthHeaders(IDictionary<string, string> headers)
         {
-            if (_authData?.Token != null)
-                headers["Cookie"] = "JWT_COOKIE=" + _authData.Token;
+            lock (_authLock)
+            {
+                if (!_trackedSocketHeaders.Contains(headers))
+                    _trackedSocketHeaders.Add(headers);
+
+                if (_authData?.Token != null)
+                    headers["Cookie"] = "JWT_COOKIE=" + _authData.Token;
+            }
+        }
+
+        public void UntrackSocketHeaders(IDictionary<string, string> headers)
+        {
+            lock (_authLock)
+                _trackedSocketHeaders.Remove(headers);
         }
 
         public void ClearAuthorization()
         {
-            _authData = null;
-            _jwtValidUntil = DateTime.MinValue;
+            lock (_authLock)
+            {
+                _authData = null;
+                _jwtValidUntil = DateTime.MinValue;
+            }
         }
 
-        public async Task EnsureAuthorizedAsync(BullishEnvironment environment)
+        public async Task EnsureAuthorizedAsync(BullishEnvironment environment, bool forceRefresh = false)
         {
-            if (_authData?.Token == null || DateTime.UtcNow > _jwtValidUntil)
+            lock (_authLock)
             {
-                var client = new BullishRestClient(o => { o.Environment = environment; o.ApiCredentials = ApiCredentials; });
-                var result = await client.ExchangeApi.Account.LoginHmac().ConfigureAwait(false);
-                if (!result.Success)
-                    throw new Exception($"Failed to authenticate: {result.Error}");
+                if (!forceRefresh && _authData?.Token != null && DateTime.UtcNow <= _jwtValidUntil)
+                    return;
+            }
+
+            var client = new BullishRestClient(o => { o.Environment = environment; o.ApiCredentials = ApiCredentials; });
+            var result = await client.ExchangeApi.Account.LoginHmac().ConfigureAwait(false);
+            if (!result.Success)
+                throw new Exception($"Failed to authenticate: {result.Error}");
+
+            lock (_authLock)
+            {
                 _authData = result.Data;
-                _jwtValidUntil = DateTime.UtcNow.AddHours(23);
+                _jwtValidUntil = DateTime.UtcNow.Add(JwtTtl);
+
+                var cookieValue = "JWT_COOKIE=" + _authData.Token;
+                foreach (var headers in _trackedSocketHeaders)
+                    headers["Cookie"] = cookieValue;
             }
         }
     }
