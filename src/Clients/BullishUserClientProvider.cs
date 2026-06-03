@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Bullish.Net.Clients.ExchangeApi;
 using Bullish.Net.Interfaces.Clients;
 using Bullish.Net.Objects.Options;
 using CryptoExchange.Net.Authentication;
@@ -52,6 +53,45 @@ namespace Bullish.Net.Clients
         {
             _restClients.TryRemove(userIdentifier, out _);
             _socketClients.TryRemove(userIdentifier, out _);
+        }
+
+        /// <inheritdoc />
+        public async Task LogoutUserClientsAsync(string userIdentifier, CancellationToken ct = default)
+        {
+            _restClients.TryRemove(userIdentifier, out var restClient);
+            _socketClients.TryRemove(userIdentifier, out var socketClient);
+
+            try
+            {
+                if (restClient != null && !restClient.Disposed)
+                {
+                    try
+                    {
+                        await restClient.ExchangeApi.Account.LogoutAsync(ct).ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                        // Logout failures should not prevent clearing cached clients.
+                    }
+                }
+
+                if (socketClient != null && !socketClient.Disposed && socketClient.ExchangeApi is BullishSocketClientExchangeApi socketApi)
+                {
+                    try
+                    {
+                        await socketApi.LogoutAsync(ct).ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                        // Logout failures should not prevent clearing cached clients.
+                    }
+                }
+            }
+            finally
+            {
+                restClient?.Dispose();
+                socketClient?.Dispose();
+            }
         }
 
         /// <inheritdoc />

@@ -19,6 +19,14 @@ namespace Bullish.Net.Interfaces.Clients
         void ClearUserClients(string userIdentifier);
 
         /// <summary>
+        /// Logout and reset the cached clients for a user.
+        /// </summary>
+        /// <param name="userIdentifier">The user identifier to clear.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A task which completes when cached clients have been cleared.</returns>
+        Task LogoutUserClientsAsync(string userIdentifier, CancellationToken ct = default);
+
+        /// <summary>
         /// Get the Rest client for a specific user.
         /// </summary>
         IBullishRestClient GetRestClient(string userIdentifier, HMACCredential? credentials = null, BullishEnvironment? environment = null);

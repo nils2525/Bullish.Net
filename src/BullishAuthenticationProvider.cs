@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using Bullish.Net.Clients;
+using Bullish.Net.Clients.ExchangeApi;
 using Bullish.Net.Objects.Models;
 using CryptoExchange.Net;
 using CryptoExchange.Net.Authentication;
@@ -20,7 +22,8 @@ namespace Bullish.Net
         private static long _lastSignedRequestNonce = 0;
 
         private readonly object _authLock = new();
-        private readonly List<IDictionary<string, string>> _trackedSocketHeaders = new();
+        private readonly ConcurrentDictionary<IDictionary<string, string>, byte> _trackedSocketHeaders = new(ReferenceEqualityComparer.Instance);
+        private readonly SemaphoreSlim _authSemaphore = new(1, 1);
 
         private BullishAuthResponse? _authData = null;
         private DateTime _jwtValidUntil = DateTime.MinValue;
@@ -101,59 +104,143 @@ namespace Bullish.Net
             => requestConfig.Method == HttpMethod.Post
                && (requestConfig.Path == "/v2/orders" || requestConfig.Path == "/v2/command");
 
+        private static WebCallResult CreateSuccessfulResult()
+            => new(null, null, null, TimeSpan.Zero, null, null, null, null, null, null, null);
+
+        private void ClearAuthorizationLocked()
+        {
+            Volatile.Write(ref _authData, null);
+            _jwtValidUntil = DateTime.MinValue;
+
+            foreach (var headers in _trackedSocketHeaders.Keys)
+                headers.Remove("Cookie");
+        }
+
+        private string? GetAuthToken()
+            => Volatile.Read(ref _authData)?.Token;
+
+        private void SetSocketAuthCookie(IDictionary<string, string> headers)
+        {
+            while (true)
+            {
+                var token = GetAuthToken();
+                if (token == null)
+                    headers.Remove("Cookie");
+                else
+                    headers["Cookie"] = "JWT_COOKIE=" + token;
+
+                if (token == GetAuthToken())
+                    return;
+            }
+        }
+
+        private async Task<WebCallResult> LogoutTokenAsync(BullishEnvironment environment, string token, CancellationToken ct = default)
+        {
+            var client = new BullishRestClient(o => { o.Environment = environment; });
+            return await ((BullishRestClientExchangeApi)client.ExchangeApi).LogoutTokenAsync(token, ct).ConfigureAwait(false);
+        }
+
         public void SetAuthHeaders(IDictionary<string, string> headers)
         {
-            headers["Authorization"] = "Bearer " + _authData?.Token;
+            var token = GetAuthToken();
+            if (token == null)
+                headers.Remove("Authorization");
+            else
+                headers["Authorization"] = "Bearer " + token;
         }
 
         public void SetSocketAuthHeaders(IDictionary<string, string> headers)
         {
-            lock (_authLock)
-            {
-                if (!_trackedSocketHeaders.Contains(headers))
-                    _trackedSocketHeaders.Add(headers);
-
-                if (_authData?.Token != null)
-                    headers["Cookie"] = "JWT_COOKIE=" + _authData.Token;
-            }
+            _trackedSocketHeaders.TryAdd(headers, 0);
+            SetSocketAuthCookie(headers);
         }
 
         public void UntrackSocketHeaders(IDictionary<string, string> headers)
         {
-            lock (_authLock)
-                _trackedSocketHeaders.Remove(headers);
+            _trackedSocketHeaders.TryRemove(headers, out _);
         }
 
         public void ClearAuthorization()
         {
             lock (_authLock)
             {
-                _authData = null;
-                _jwtValidUntil = DateTime.MinValue;
+                ClearAuthorizationLocked();
+            }
+        }
+
+        /// <summary>
+        /// Logs out the currently cached JWT and clears local authorization state on success.
+        /// </summary>
+        internal async Task<WebCallResult> LogoutAsync(BullishEnvironment environment, CancellationToken ct = default)
+        {
+            await _authSemaphore.WaitAsync(ct).ConfigureAwait(false);
+            try
+            {
+                var token = GetAuthToken();
+                if (string.IsNullOrWhiteSpace(token))
+                {
+                    ClearAuthorization();
+                    return CreateSuccessfulResult();
+                }
+
+                var result = await LogoutTokenAsync(environment, token, ct).ConfigureAwait(false);
+                if (result.Success)
+                    ClearAuthorization();
+
+                return result;
+            }
+            finally
+            {
+                _authSemaphore.Release();
             }
         }
 
         public async Task EnsureAuthorizedAsync(BullishEnvironment environment, bool forceRefresh = false)
         {
-            lock (_authLock)
+            await _authSemaphore.WaitAsync().ConfigureAwait(false);
+            try
             {
-                if (!forceRefresh && _authData?.Token != null && DateTime.UtcNow <= _jwtValidUntil)
-                    return;
+                string? previousToken;
+                lock (_authLock)
+                {
+                    var currentAuthData = Volatile.Read(ref _authData);
+                    if (!forceRefresh && currentAuthData?.Token != null && DateTime.UtcNow <= _jwtValidUntil)
+                        return;
+
+                    previousToken = currentAuthData?.Token;
+                    ClearAuthorizationLocked();
+                }
+
+                if (!string.IsNullOrWhiteSpace(previousToken))
+                {
+                    try
+                    {
+                        await LogoutTokenAsync(environment, previousToken).ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                        // A stale token should not prevent obtaining the replacement token.
+                    }
+                }
+
+                var client = new BullishRestClient(o => { o.Environment = environment; o.ApiCredentials = ApiCredentials; });
+                var result = await client.ExchangeApi.Account.LoginHmac().ConfigureAwait(false);
+                if (!result.Success)
+                    throw new Exception($"Failed to authenticate: {result.Error}");
+
+                lock (_authLock)
+                {
+                    Volatile.Write(ref _authData, result.Data);
+                    _jwtValidUntil = DateTime.UtcNow.Add(JwtTtl);
+
+                    var cookieValue = "JWT_COOKIE=" + result.Data.Token;
+                    foreach (var headers in _trackedSocketHeaders.Keys)
+                        headers["Cookie"] = cookieValue;
+                }
             }
-
-            var client = new BullishRestClient(o => { o.Environment = environment; o.ApiCredentials = ApiCredentials; });
-            var result = await client.ExchangeApi.Account.LoginHmac().ConfigureAwait(false);
-            if (!result.Success)
-                throw new Exception($"Failed to authenticate: {result.Error}");
-
-            lock (_authLock)
+            finally
             {
-                _authData = result.Data;
-                _jwtValidUntil = DateTime.UtcNow.Add(JwtTtl);
-
-                var cookieValue = "JWT_COOKIE=" + _authData.Token;
-                foreach (var headers in _trackedSocketHeaders)
-                    headers["Cookie"] = cookieValue;
+                _authSemaphore.Release();
             }
         }
     }

@@ -24,12 +24,10 @@ namespace Bullish.Net.Clients.ExchangeApi
 
         public async Task<WebCallResult> LogoutAsync(CancellationToken ct = default)
         {
-            var request = _definitions.GetOrCreate(HttpMethod.Get, "/v1/users/logout", BullishExchange.RateLimiter.Generic, 1, true);
-            var result = await _baseClient.SendAsync(request, null, ct).ConfigureAwait(false);
-            if (result.Success)
-                _baseClient.AuthenticationProvider?.ClearAuthorization();
-
-            return result;
+            var authProvider = _baseClient.AuthenticationProvider;
+            return authProvider == null
+                ? new WebCallResult(null, null, null, TimeSpan.Zero, null, null, null, null, null, null, null)
+                : await authProvider.LogoutAsync(_baseClient.ClientOptions.Environment, ct).ConfigureAwait(false);
         }
 
         public Task<WebCallResult<BullishNonceRange>> GetNonceAsync(CancellationToken ct = default)

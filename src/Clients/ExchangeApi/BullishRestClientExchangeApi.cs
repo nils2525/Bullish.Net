@@ -16,6 +16,10 @@ namespace Bullish.Net.Clients.ExchangeApi
     /// <inheritdoc cref="IBullishRestClientExchangeApi" />
     internal partial class BullishRestClientExchangeApi : RestApiClient<BullishEnvironment, BullishAuthenticationProvider, HMACCredential>, IBullishRestClientExchangeApi
     {
+        #region Fields
+        private static readonly RequestDefinitionCache _definitions = new RequestDefinitionCache();
+        #endregion
+
         #region Api clients
         /// <inheritdoc />
         public IBullishClientExchangeApiAccount Account { get; }
@@ -55,6 +59,27 @@ namespace Bullish.Net.Clients.ExchangeApi
         {
             var result = await SendToAddressAsync<object>(BaseAddress, definition, parameters, cancellationToken, weight).ConfigureAwait(false);
             return result.AsDataless();
+        }
+
+        /// <summary>
+        /// Send a request with explicit additional headers.
+        /// </summary>
+        internal async Task<WebCallResult> SendAsync(RequestDefinition definition, ParameterCollection? parameters, Dictionary<string, string>? additionalHeaders, CancellationToken cancellationToken, int? weight = null)
+        {
+            var result = await base.SendAsync<object>(BaseAddress, definition, parameters, cancellationToken, additionalHeaders, weight).ConfigureAwait(false);
+            return result.AsDataless();
+        }
+
+        /// <summary>
+        /// Logout the specified JWT without using the cached authentication provider token.
+        /// </summary>
+        internal Task<WebCallResult> LogoutTokenAsync(string token, CancellationToken cancellationToken = default)
+        {
+            var request = _definitions.GetOrCreate(HttpMethod.Get, "/v1/users/logout", BullishExchange.RateLimiter.Generic, 1, false);
+            return SendAsync(request, null, new Dictionary<string, string>
+            {
+                { "Authorization", "Bearer " + token }
+            }, cancellationToken);
         }
 
         internal async Task<WebCallResult<T>> SendToAddressAsync<T>(string baseAddress, RequestDefinition definition, ParameterCollection? parameters, CancellationToken cancellationToken, int? weight = null) where T : class

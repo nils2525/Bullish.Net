@@ -80,21 +80,21 @@ namespace Bullish.Net.Clients.ExchangeApi
             return await base.GetSocketConnection(address, authenticated, dedicatedRequestConnection, ct, topic);
         }
 
-        // Bullish can invalidate a JWT server-side before its 24h TTL is up. When that happens
-        // the WS handshake returns 401 and the reconnect loop spins with the same stale cookie
-        // until the local cache finally expires. Force a fresh login on every authenticated
-        // reconnect so the handshake always uses a server-valid token.
         protected override async Task<Uri?> GetReconnectUriAsync(ISocketConnection connection)
         {
             if (connection.HasAuthenticatedSubscription && AuthenticationProvider != null)
-            {
-                var authProvider = (BullishAuthenticationProvider)AuthenticationProvider!;
-                authProvider.ClearAuthorization();
-                await authProvider.EnsureAuthorizedAsync(ClientOptions.Environment, forceRefresh: true).ConfigureAwait(false);
-            }
+                await ((BullishAuthenticationProvider)AuthenticationProvider!).EnsureAuthorizedAsync(ClientOptions.Environment).ConfigureAwait(false);
 
             return await base.GetReconnectUriAsync(connection).ConfigureAwait(false);
         }
+
+        /// <summary>
+        /// Logs out the JWT cached by this socket API authentication provider.
+        /// </summary>
+        internal Task<WebCallResult> LogoutAsync(CancellationToken ct = default)
+            => AuthenticationProvider == null
+                ? Task.FromResult(new WebCallResult(null, null, null, TimeSpan.Zero, null, null, null, null, null, null, null))
+                : AuthenticationProvider.LogoutAsync(ClientOptions.Environment, ct);
 
         /// <inheritdoc />
         public async Task<CallResult<UpdateSubscription>> SubscribeToTickerUpdatesAsync(string symbol, Action<DataEvent<BullishTicker>> onMessage, CancellationToken ct = default)
