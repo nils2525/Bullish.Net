@@ -22,9 +22,9 @@ namespace Bullish.Net.Clients.MessageHandlers
         /// </summary>
         public BullishSocketSpotMessageHandler()
         {
-            AddTopicMapping<BullishSubscriptionEvent<BullishTradeSocketData>>(c => c.Data.Symbol);
-            AddTopicMapping<BullishSubscriptionEvent<BullishOrderBook>>(c => c.Data.Symbol);
-            AddTopicMapping<BullishSubscriptionEvent<BullishTicker>>(c => c.Data.Symbol);
+            AddTopicMapping<BullishSubscriptionEvent<BullishTradeSocketData>>(c => c.Data?.Symbol);
+            AddTopicMapping<BullishSubscriptionEvent<BullishOrderBook>>(c => c.Data?.Symbol);
+            AddTopicMapping<BullishSubscriptionEvent<BullishTicker>>(c => c.Data?.Symbol);
         }
 
         /// <inheritdoc />
