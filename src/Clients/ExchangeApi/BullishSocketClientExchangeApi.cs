@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using Bullish.Net.Clients.MessageHandlers;
 using Bullish.Net.ExtensionMethods;
@@ -29,11 +28,6 @@ namespace Bullish.Net.Clients.ExchangeApi
     /// </summary>
     internal partial class BullishSocketClientExchangeApi : SocketApiClient<BullishEnvironment, BullishAuthenticationProvider, HMACCredential>, IBullishSocketClientExchangeApi
     {
-        #region fields
-        private readonly ConcurrentDictionary<string, string> _unsubscribed = new();
-        private readonly ConcurrentDictionary<int, string> _subscribed = new();
-        #endregion
-
         public new BullishSocketOptions ClientOptions => (BullishSocketOptions)base.ClientOptions;
 
         #region constructor/destructor
@@ -134,7 +128,7 @@ namespace Bullish.Net.Clients.ExchangeApi
                         .WithDataTimestamp(timestamp, GetTimeOffset())
                     );
             });
-            var subscription = new BullishSubscription<BullishTradeSocketData>(_logger, "anonymousTrades", symbol, internalHandler, false, "V1TAAnonymousTradeUpdate");
+            var subscription = new BullishSubscription<BullishTradeSocketData>(_logger, "anonymousTrades", symbol, internalHandler, false, "V1TAAnonymousTradeUpdate", serverSideUnsubscribe: true);
             return await SubscribeAsync(BaseAddress.AppendPath("/trading-api/v1/market-data/trades"), subscription, ct).ConfigureAwait(false);
         }
 
@@ -158,7 +152,7 @@ namespace Bullish.Net.Clients.ExchangeApi
                     );
             });
 
-            var subscription = new BullishSubscription<BullishOrderBook>(_logger, topic, symbol, internalHandler, false, listenChannel);
+            var subscription = new BullishSubscription<BullishOrderBook>(_logger, topic, symbol, internalHandler, false, listenChannel, serverSideUnsubscribe: true);
             return SubscribeAsync(BaseAddress.AppendPath("/trading-api/v1/market-data/orderbook"), subscription, ct);
         }
 
@@ -181,7 +175,7 @@ namespace Bullish.Net.Clients.ExchangeApi
                 onMessage(dataEvent);
             });
 
-            var subscription = new BullishSubscription<BullishAccountAsset[]>(_logger, "assetAccounts", null, internalHandler, true, "V1TAAssetAccount", tradingAccountId);
+            var subscription = new BullishSubscription<BullishAccountAsset[]>(_logger, "assetAccounts", null, internalHandler, true, "V1TAAssetAccount", tradingAccountId, serverSideUnsubscribe: true);
             return SubscribeAsync(ClientOptions.Environment.SocketClientPrivateAddress.AppendPath("/trading-api/v1/private-data"), subscription, ct);
         }
 
@@ -204,7 +198,7 @@ namespace Bullish.Net.Clients.ExchangeApi
                 onMessage(dataEvent);
             });
 
-            var subscription = new BullishSubscription<BullishOrder[]>(_logger, "orders", null, internalHandler, true, "V1TAOrder", tradingAccountId);
+            var subscription = new BullishSubscription<BullishOrder[]>(_logger, "orders", null, internalHandler, true, "V1TAOrder", tradingAccountId, serverSideUnsubscribe: true);
             return SubscribeAsync(ClientOptions.Environment.SocketClientPrivateAddress.AppendPath("/trading-api/v1/private-data"), subscription, ct);
         }
 
@@ -227,7 +221,7 @@ namespace Bullish.Net.Clients.ExchangeApi
                 onMessage(dataEvent);
             });
 
-            var subscription = new BullishSubscription<BullishUserTrade[]>(_logger, "trades", null, internalHandler, true, "V1TATrade", tradingAccountId);
+            var subscription = new BullishSubscription<BullishUserTrade[]>(_logger, "trades", null, internalHandler, true, "V1TATrade", tradingAccountId, serverSideUnsubscribe: true);
             return SubscribeAsync(ClientOptions.Environment.SocketClientPrivateAddress.AppendPath("/trading-api/v1/private-data"), subscription, ct);
         }
         #endregion
@@ -238,31 +232,6 @@ namespace Bullish.Net.Clients.ExchangeApi
         /// <inheritdoc />
         protected override Task<Query?> GetAuthenticationRequestAsync(SocketConnection connection)
             => Task.FromResult<Query?>(null);
-
-        public override async Task UnsubscribeAsync(UpdateSubscription subscription)
-        {
-            if (_subscribed.TryRemove(subscription.Id, out var topic))
-                _unsubscribed.TryAdd(topic, topic);
-
-            await base.UnsubscribeAsync(subscription);
-        }
-
-        public override Task<bool> UnsubscribeAsync(int subscriptionId)
-        {
-            return base.UnsubscribeAsync(subscriptionId);
-        }
-
-        protected override async Task<CallResult<UpdateSubscription>> SubscribeAsync(Subscription subscription, CancellationToken ct)
-        {
-            if (subscription.Topic != null)
-                _unsubscribed.TryRemove(subscription.Topic, out _);
-
-            var response = await base.SubscribeAsync(subscription, ct);
-            if (response.Success && subscription.Topic != null)
-                _subscribed.TryAdd(response.Data.Id, subscription.Topic);
-
-            return response;
-        }
 
         /// <inheritdoc />
         public override string FormatSymbol(string baseAsset, string quoteAsset, TradingMode tradingMode, DateTime? deliverTime = null)

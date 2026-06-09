@@ -10,27 +10,50 @@ namespace Bullish.Net.Objects.Sockets.Subscriptions
     /// <inheritdoc />
     internal class BullishSubscription<T> : Subscription
     {
+        #region Fields
         private readonly string _channel;
         private readonly string? _symbol;
         private readonly string? _tradingAccountId;
+        private readonly bool _serverSideUnsubscribe;
         private readonly Action<DateTime, string?, BullishSubscriptionEvent<T>> _handler;
+        #endregion
 
+        #region Constructors
         /// <summary>
-        /// ctor
+        /// Creates a Bullish socket subscription.
         /// </summary>
-        public BullishSubscription(ILogger logger, string channel, string? symbol, Action<DateTime, string?, BullishSubscriptionEvent<T>> handler, bool auth, string listenChannel, string? tradingAccountId = null) : base(logger, auth)
+        /// <param name="logger">The logger.</param>
+        /// <param name="channel">The Bullish subscription topic.</param>
+        /// <param name="symbol">The market symbol, if this is a symbol subscription.</param>
+        /// <param name="handler">The update handler.</param>
+        /// <param name="auth">Whether the subscription is authenticated.</param>
+        /// <param name="listenChannel">The data type channel to listen for.</param>
+        /// <param name="tradingAccountId">The trading account id, if this is a private data subscription.</param>
+        /// <param name="serverSideUnsubscribe">Whether Bullish supports an unsubscribe command for this topic.</param>
+        public BullishSubscription(
+            ILogger logger,
+            string channel,
+            string? symbol,
+            Action<DateTime, string?, BullishSubscriptionEvent<T>> handler,
+            bool auth,
+            string listenChannel,
+            string? tradingAccountId = null,
+            bool serverSideUnsubscribe = false) : base(logger, auth)
         {
             _handler = handler;
             _channel = channel;
             _symbol = symbol;
             _tradingAccountId = tradingAccountId;
+            _serverSideUnsubscribe = serverSideUnsubscribe;
             Topic = $"{listenChannel}#{symbol ?? tradingAccountId}";
 
             MessageRouter = symbol != null ?
                 MessageRouter.CreateWithTopicFilter<BullishSubscriptionEvent<T>>(listenChannel, symbol, DoHandleMessage) :
                 MessageRouter.CreateWithoutTopicFilter<BullishSubscriptionEvent<T>>(listenChannel, DoHandleMessage);
         }
+        #endregion
 
+        #region Methods
         /// <inheritdoc />
         protected override Query? GetSubQuery(SocketConnection connection)
         {
@@ -51,6 +74,9 @@ namespace Bullish.Net.Objects.Sockets.Subscriptions
         /// <inheritdoc />
         protected override Query? GetUnsubQuery(SocketConnection connection)
         {
+            if (!_serverSideUnsubscribe)
+                return null;
+
             var parameters = new ParameterCollection
             {
                 { "topic", _channel }
@@ -71,5 +97,6 @@ namespace Bullish.Net.Objects.Sockets.Subscriptions
             _handler.Invoke(receiveTime, originalData, message);
             return CallResult.SuccessResult;
         }
+        #endregion
     }
 }
