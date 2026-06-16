@@ -15,6 +15,7 @@ namespace Bullish.Net.Objects.Options
         {
             Environment = BullishEnvironment.Live,
             SocketSubscriptionsCombineTarget = 200,
+            SocketIndividualSubscriptionCombineTarget = 100,
             MaxSocketConnections = 100,
         };
 
@@ -34,6 +35,7 @@ namespace Bullish.Net.Objects.Options
         internal BullishSocketOptions Set(BullishSocketOptions targetOptions)
         {
             targetOptions = base.Set<BullishSocketOptions>(targetOptions);
+            targetOptions.SocketIndividualSubscriptionCombineTarget = SocketIndividualSubscriptionCombineTarget;
             targetOptions.ExchangeOptions = ExchangeOptions.Set(targetOptions.ExchangeOptions);
             return targetOptions;
         }
