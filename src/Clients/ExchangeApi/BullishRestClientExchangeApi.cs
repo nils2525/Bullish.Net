@@ -34,12 +34,12 @@ namespace Bullish.Net.Clients.ExchangeApi
         #endregion
 
         #region constructor/destructor
-        internal BullishRestClientExchangeApi(ILogger logger, HttpClient? httpClient, BullishRestOptions options)
-            : base(logger, httpClient, options.Environment.RestClientAddress.AppendPath("trading-api"), options, options.ExchangeOptions)
+        internal BullishRestClientExchangeApi(ILoggerFactory? loggerFactory, HttpClient? httpClient, BullishRestOptions options)
+            : base(loggerFactory, BullishExchange.ExchangeName, httpClient, options.Environment.RestClientAddress.AppendPath("trading-api"), options, options.ExchangeOptions)
         {
             Account = new BullishRestClientExchangeApiAccount(this);
-            ExchangeData = new BullishRestClientExchangeApiExchangeData(logger, this);
-            Trading = new BullishRestClientExchangeApiTrading(logger, this);
+            ExchangeData = new BullishRestClientExchangeApiExchangeData(_logger, this);
+            Trading = new BullishRestClientExchangeApiTrading(_logger, this);
         }
         #endregion
 
@@ -52,10 +52,10 @@ namespace Bullish.Net.Clients.ExchangeApi
             => new BullishAuthenticationProvider(credentials);
 
 
-        internal Task<WebCallResult<T>> SendAsync<T>(RequestDefinition definition, ParameterCollection? parameters, CancellationToken cancellationToken, int? weight = null) where T : class
+        internal Task<HttpResult<T>> SendAsync<T>(RequestDefinition definition, Parameters? parameters, CancellationToken cancellationToken, int? weight = null) where T : class
             => SendToAddressAsync<T>(BaseAddress, definition, parameters, cancellationToken, weight);
 
-        internal async Task<WebCallResult> SendAsync(RequestDefinition definition, ParameterCollection? parameters, CancellationToken cancellationToken, int? weight = null)
+        internal async Task<HttpResult> SendAsync(RequestDefinition definition, Parameters? parameters, CancellationToken cancellationToken, int? weight = null)
         {
             var result = await SendToAddressAsync<object>(BaseAddress, definition, parameters, cancellationToken, weight).ConfigureAwait(false);
             return result.AsDataless();
@@ -64,16 +64,17 @@ namespace Bullish.Net.Clients.ExchangeApi
         /// <summary>
         /// Send a request with explicit additional headers.
         /// </summary>
-        internal async Task<WebCallResult> SendAsync(RequestDefinition definition, ParameterCollection? parameters, Dictionary<string, string>? additionalHeaders, CancellationToken cancellationToken, int? weight = null)
+        internal async Task<HttpResult> SendAsync(RequestDefinition definition, Parameters? parameters, Dictionary<string, string>? additionalHeaders, CancellationToken cancellationToken, int? weight = null)
         {
-            var result = await base.SendAsync<object>(BaseAddress, definition, parameters, cancellationToken, additionalHeaders, weight).ConfigureAwait(false);
+            definition.BaseAddress = BaseAddress;
+            var result = await base.SendAsync<object>(definition, parameters, cancellationToken, additionalHeaders, weight).ConfigureAwait(false);
             return result.AsDataless();
         }
 
         /// <summary>
         /// Logout the specified JWT without using the cached authentication provider token.
         /// </summary>
-        internal Task<WebCallResult> LogoutTokenAsync(string token, CancellationToken cancellationToken = default)
+        internal Task<HttpResult> LogoutTokenAsync(string token, CancellationToken cancellationToken = default)
         {
             var request = _definitions.GetOrCreate(HttpMethod.Get, "/v1/users/logout", BullishExchange.RateLimiter.Generic, 1, false);
             return SendAsync(request, null, new Dictionary<string, string>
@@ -82,20 +83,21 @@ namespace Bullish.Net.Clients.ExchangeApi
             }, cancellationToken);
         }
 
-        internal async Task<WebCallResult<T>> SendToAddressAsync<T>(string baseAddress, RequestDefinition definition, ParameterCollection? parameters, CancellationToken cancellationToken, int? weight = null) where T : class
+        internal async Task<HttpResult<T>> SendToAddressAsync<T>(string baseAddress, RequestDefinition definition, Parameters? parameters, CancellationToken cancellationToken, int? weight = null) where T : class
         {
             if (definition.Authenticated && definition.Path != "/v1/users/hmac/login" && AuthenticationProvider != null)
                 await AuthenticationProvider!.EnsureAuthorizedAsync(ClientOptions.Environment).ConfigureAwait(false);
 
-            var result = await base.SendAsync<T>(baseAddress, definition, parameters, cancellationToken, null, weight).ConfigureAwait(false);
-            if (!result)
+            definition.BaseAddress = baseAddress;
+            var result = await base.SendAsync<T>(definition, parameters, cancellationToken, null, weight).ConfigureAwait(false);
+            if (!result.Success)
                 return result.As<T>(default);
 
             return result;
         }
 
         /// <inheritdoc />
-        protected override Task<WebCallResult<DateTime>> GetServerTimestampAsync()
+        protected override Task<HttpResult<DateTime>> GetServerTimestampAsync()
             => ExchangeData.GetServerTimeAsync();
 
         /// <inheritdoc />

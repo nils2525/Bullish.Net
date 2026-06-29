@@ -59,20 +59,21 @@ namespace Bullish.Net
 
         public override void ProcessRequest(RestApiClient apiClient, RestRequestConfiguration requestConfig)
         {
-            if (!requestConfig.Authenticated)
+            var definition = requestConfig.RequestDefinition;
+            if (!definition.Authenticated)
                 return;
 
             requestConfig.Headers ??= new Dictionary<string, string>();
 
             var timestamp = GetMillisecondTimestamp(apiClient);
-            if (requestConfig.Path.Contains("/hmac/login"))
+            if (definition.Path.Contains("/hmac/login"))
             {
                 var nonce = GenerateLoginNonce();
                 requestConfig.Headers["BX-TIMESTAMP"] = timestamp;
                 requestConfig.Headers["BX-NONCE"] = nonce;
                 requestConfig.Headers["BX-PUBLIC-KEY"] = ApiCredentials.Key;
-                var requestPath = new Uri(requestConfig.BaseAddress).AbsolutePath.TrimEnd('/') + requestConfig.Path;
-                var signaturePayload = $"{timestamp}{nonce}{requestConfig.Method.Method.ToUpperInvariant()}{requestPath}";
+                var requestPath = new Uri(definition.BaseAddress).AbsolutePath.TrimEnd('/') + definition.Path;
+                var signaturePayload = $"{timestamp}{nonce}{definition.Method.Method.ToUpperInvariant()}{requestPath}";
                 requestConfig.Headers["BX-SIGNATURE"] = SignHMACSHA256(ApiCredentials, signaturePayload, SignOutputType.Hex).ToLowerInvariant();
                 return;
             }
@@ -92,8 +93,9 @@ namespace Bullish.Net
                 requestConfig.SetBodyContent(bodyContent);
             }
 
-            var requestPath = new Uri(requestConfig.BaseAddress).AbsolutePath.TrimEnd('/') + requestConfig.Path;
-            var signaturePayload = $"{timestamp}{nonce}{requestConfig.Method.Method.ToUpperInvariant()}{requestPath}{bodyContent}";
+            var definition = requestConfig.RequestDefinition;
+            var requestPath = new Uri(definition.BaseAddress).AbsolutePath.TrimEnd('/') + definition.Path;
+            var signaturePayload = $"{timestamp}{nonce}{definition.Method.Method.ToUpperInvariant()}{requestPath}{bodyContent}";
             var hashedPayload = SignSHA256(signaturePayload, SignOutputType.Hex).ToLowerInvariant();
             requestConfig.Headers!["BX-TIMESTAMP"] = timestamp;
             requestConfig.Headers["BX-NONCE"] = nonce;
@@ -101,11 +103,11 @@ namespace Bullish.Net
         }
 
         private static bool IsSignedRequest(RestRequestConfiguration requestConfig)
-            => requestConfig.Method == HttpMethod.Post
-               && (requestConfig.Path == "/v2/orders" || requestConfig.Path == "/v2/command");
+            => requestConfig.RequestDefinition.Method == HttpMethod.Post
+               && (requestConfig.RequestDefinition.Path == "/v2/orders" || requestConfig.RequestDefinition.Path == "/v2/command");
 
-        private static WebCallResult CreateSuccessfulResult()
-            => new(null, null, null, TimeSpan.Zero, null, null, null, null, null, null, null);
+        private static HttpResult CreateSuccessfulResult()
+            => new() { Exchange = BullishExchange.ExchangeName };
 
         private void ClearAuthorizationLocked()
         {
@@ -134,7 +136,7 @@ namespace Bullish.Net
             }
         }
 
-        private async Task<WebCallResult> LogoutTokenAsync(BullishEnvironment environment, string token, CancellationToken ct = default)
+        private async Task<HttpResult> LogoutTokenAsync(BullishEnvironment environment, string token, CancellationToken ct = default)
         {
             var client = new BullishRestClient(o => { o.Environment = environment; });
             return await ((BullishRestClientExchangeApi)client.ExchangeApi).LogoutTokenAsync(token, ct).ConfigureAwait(false);
@@ -171,7 +173,7 @@ namespace Bullish.Net
         /// <summary>
         /// Logs out the currently cached JWT and clears local authorization state on success.
         /// </summary>
-        internal async Task<WebCallResult> LogoutAsync(BullishEnvironment environment, CancellationToken ct = default)
+        internal async Task<HttpResult> LogoutAsync(BullishEnvironment environment, CancellationToken ct = default)
         {
             await _authSemaphore.WaitAsync(ct).ConfigureAwait(false);
             try

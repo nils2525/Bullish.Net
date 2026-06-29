@@ -11,6 +11,12 @@ namespace Bullish.Net
     public static class BullishExchange
     {
         internal static BullishSourceGenerationContext SerializerContext { get; } = new BullishSourceGenerationContext();
+        internal static readonly ParameterSerializationSettings _parameterSerializationSettings = new()
+        {
+            Decimal = DecimalSerialization.String,
+            Array = ArrayParametersSerialization.MultipleValues,
+            Sort = false
+        };
 
         /// <summary>
         /// Exchange name

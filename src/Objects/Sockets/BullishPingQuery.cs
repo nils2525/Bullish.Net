@@ -10,12 +10,12 @@ namespace Bullish.Net.Objects.Sockets
     {
         public BullishPingQuery(bool authenticated, int weight = 1) : base(new BullishSocketRequest("keepalivePing"), authenticated, weight)
         {
-            MessageRouter = MessageRouter.CreateWithoutTopicFilter<BullishSocketResponse>(((BullishSocketRequest)Request).Id, HandleMessage);
+            MessageRouter = MessageRouter.CreateForQuery<BullishSocketResponse>(((BullishSocketRequest)Request).Id, HandleMessage);
         }
 
         public CallResult<BullishSocketResponse> HandleMessage(SocketConnection connection, DateTime receiveTime, string? originalData, BullishSocketResponse message)
         {
-            return new CallResult<BullishSocketResponse>(message, originalData, null);
+            return CallResult.Ok(message, originalData);
         }
     }
 }

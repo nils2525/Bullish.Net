@@ -35,8 +35,8 @@ namespace Bullish.Net.Clients.ExchangeApi
         /// <summary>
         /// ctor
         /// </summary>
-        internal BullishSocketClientExchangeApi(ILogger logger, BullishSocketOptions options) :
-            base(logger, options.Environment.SocketClientAddress!, options, options.ExchangeOptions)
+        internal BullishSocketClientExchangeApi(ILoggerFactory? loggerFactory, BullishSocketOptions options) :
+            base(loggerFactory, BullishExchange.ExchangeName, options.Environment.SocketClientAddress!, options, options.ExchangeOptions)
         {
             RateLimiter = BullishExchange.RateLimiter.Generic;
             RegisterPeriodicQuery("pong", TimeSpan.FromMinutes(1), (c) => new BullishPingQuery(false), null);
@@ -71,7 +71,7 @@ namespace Bullish.Net.Clients.ExchangeApi
             if (authenticated && AuthenticationProvider != null)
                 await ((BullishAuthenticationProvider)AuthenticationProvider!).EnsureAuthorizedAsync(ClientOptions.Environment).ConfigureAwait(false);
 
-            return await base.GetSocketConnection(address, authenticated, dedicatedRequestConnection, ct, topic);
+            return await base.GetSocketConnection(address, authenticated, dedicatedRequestConnection, ct, topic, individualSubscriptionCount);
         }
 
         protected override async Task<Uri?> GetReconnectUriAsync(ISocketConnection connection)
@@ -85,13 +85,13 @@ namespace Bullish.Net.Clients.ExchangeApi
         /// <summary>
         /// Logs out the JWT cached by this socket API authentication provider.
         /// </summary>
-        internal Task<WebCallResult> LogoutAsync(CancellationToken ct = default)
+        internal Task<HttpResult> LogoutAsync(CancellationToken ct = default)
             => AuthenticationProvider == null
-                ? Task.FromResult(new WebCallResult(null, null, null, TimeSpan.Zero, null, null, null, null, null, null, null))
+                ? Task.FromResult(new HttpResult { Exchange = BullishExchange.ExchangeName })
                 : AuthenticationProvider.LogoutAsync(ClientOptions.Environment, ct);
 
         /// <inheritdoc />
-        public async Task<CallResult<UpdateSubscription>> SubscribeToTickerUpdatesAsync(string symbol, Action<DataEvent<BullishTicker>> onMessage, CancellationToken ct = default)
+        public async Task<WebSocketResult<UpdateSubscription>> SubscribeToTickerUpdatesAsync(string symbol, Action<DataEvent<BullishTicker>> onMessage, CancellationToken ct = default)
         {
             var internalHandler = new Action<DateTime, string?, BullishSubscriptionEvent<BullishTicker>>((receiveTime, originalData, data) =>
             {
@@ -112,7 +112,7 @@ namespace Bullish.Net.Clients.ExchangeApi
         }
 
         /// <inheritdoc />
-        public async Task<CallResult<UpdateSubscription>> SubscribeToTradeUpdatesAsync(string symbol, Action<DataEvent<BullishTrade[]>> onMessage, CancellationToken ct = default)
+        public async Task<WebSocketResult<UpdateSubscription>> SubscribeToTradeUpdatesAsync(string symbol, Action<DataEvent<BullishTrade[]>> onMessage, CancellationToken ct = default)
         {
             var internalHandler = new Action<DateTime, string?, BullishSubscriptionEvent<BullishTradeSocketData>>((receiveTime, originalData, data) =>
             {
@@ -133,7 +133,7 @@ namespace Bullish.Net.Clients.ExchangeApi
         }
 
         /// <inheritdoc />
-        public Task<CallResult<UpdateSubscription>> SubscribeToOrderBookUpdatesAsync(string symbol, bool bboOnly, Action<DataEvent<BullishOrderBook>> onMessage, CancellationToken ct = default)
+        public Task<WebSocketResult<UpdateSubscription>> SubscribeToOrderBookUpdatesAsync(string symbol, bool bboOnly, Action<DataEvent<BullishOrderBook>> onMessage, CancellationToken ct = default)
         {
             var topic = bboOnly ? "l1Orderbook" : "l2Orderbook";
             var listenChannel = bboOnly ? "V1TALevel1" : "V1TALevel2";
@@ -157,7 +157,7 @@ namespace Bullish.Net.Clients.ExchangeApi
         }
 
         /// <inheritdoc />
-        public Task<CallResult<UpdateSubscription>> SubscribeToAssetAccountUpdatesAsync(string tradingAccountId, Action<DataEvent<BullishAccountAsset[]>> onMessage, CancellationToken ct = default)
+        public Task<WebSocketResult<UpdateSubscription>> SubscribeToAssetAccountUpdatesAsync(string tradingAccountId, Action<DataEvent<BullishAccountAsset[]>> onMessage, CancellationToken ct = default)
         {
             var internalHandler = new Action<DateTime, string?, BullishSubscriptionEvent<BullishAccountAsset[]>>((receiveTime, originalData, data) =>
             {
@@ -180,7 +180,7 @@ namespace Bullish.Net.Clients.ExchangeApi
         }
 
         /// <inheritdoc />
-        public Task<CallResult<UpdateSubscription>> SubscribeToOrderUpdatesAsync(string tradingAccountId, Action<DataEvent<BullishOrder[]>> onMessage, CancellationToken ct = default)
+        public Task<WebSocketResult<UpdateSubscription>> SubscribeToOrderUpdatesAsync(string tradingAccountId, Action<DataEvent<BullishOrder[]>> onMessage, CancellationToken ct = default)
         {
             var internalHandler = new Action<DateTime, string?, BullishSubscriptionEvent<BullishOrder[]>>((receiveTime, originalData, data) =>
             {
@@ -203,7 +203,7 @@ namespace Bullish.Net.Clients.ExchangeApi
         }
 
         /// <inheritdoc />
-        public Task<CallResult<UpdateSubscription>> SubscribeToUserTradeUpdatesAsync(string tradingAccountId, Action<DataEvent<BullishUserTrade[]>> onMessage, CancellationToken ct = default)
+        public Task<WebSocketResult<UpdateSubscription>> SubscribeToUserTradeUpdatesAsync(string tradingAccountId, Action<DataEvent<BullishUserTrade[]>> onMessage, CancellationToken ct = default)
         {
             var internalHandler = new Action<DateTime, string?, BullishSubscriptionEvent<BullishUserTrade[]>>((receiveTime, originalData, data) =>
             {

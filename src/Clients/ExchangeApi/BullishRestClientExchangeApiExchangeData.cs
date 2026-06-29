@@ -19,11 +19,11 @@ namespace Bullish.Net.Clients.ExchangeApi
         #region Get Server Time
 
         /// <inheritdoc />
-        public async Task<WebCallResult<DateTime>> GetServerTimeAsync(CancellationToken ct = default)
+        public async Task<HttpResult<DateTime>> GetServerTimeAsync(CancellationToken ct = default)
         {
             var request = _definitions.GetOrCreate(HttpMethod.Get, "/v1/time", BullishExchange.RateLimiter.Generic, 1, false);
             var result = await _baseClient.SendAsync<BullishTimestamp>(request, null, ct).ConfigureAwait(false);
-            if (!result)
+            if (!result.Success)
                 return result.As<DateTime>(default);
 
             return result.As(result.Data.Timestamp);
@@ -34,7 +34,7 @@ namespace Bullish.Net.Clients.ExchangeApi
         #region Get Symbols
 
         /// <inheritdoc />
-        public async Task<WebCallResult<BullishSymbol[]>> GetSymbolsAsync(CancellationToken ct = default)
+        public async Task<HttpResult<BullishSymbol[]>> GetSymbolsAsync(CancellationToken ct = default)
         {
             var request = _definitions.GetOrCreate(HttpMethod.Get, "/v1/markets", BullishExchange.RateLimiter.Generic, 1, false);
             var result = await _baseClient.SendAsync<BullishSymbol[]>(request, null, ct).ConfigureAwait(false);
@@ -42,21 +42,21 @@ namespace Bullish.Net.Clients.ExchangeApi
         }
 
         /// <inheritdoc />
-        public async Task<WebCallResult<BullishAsset[]>> GetAssetsAsync(CancellationToken ct = default)
+        public async Task<HttpResult<BullishAsset[]>> GetAssetsAsync(CancellationToken ct = default)
         {
             var request = _definitions.GetOrCreate(HttpMethod.Get, "v1/assets", BullishExchange.RateLimiter.Generic, 1, false);
             var result = await _baseClient.SendAsync<BullishAsset[]>(request, null, ct).ConfigureAwait(false);
             return result;
         }
 
-        public async Task<WebCallResult<BullishTicker[]>> GetTickersAsync(CancellationToken ct = default)
+        public async Task<HttpResult<BullishTicker[]>> GetTickersAsync(CancellationToken ct = default)
         {
             var request = _definitions.GetOrCreate(HttpMethod.Get, "markets/ticker24h", BullishExchange.RateLimiter.Generic, 1, false);
             var result = await _baseClient.SendAsync<BullishTicker[]>(request, null, ct).ConfigureAwait(false);
             return result;
         }
 
-        public async Task<WebCallResult<BullishTicker>> GetTickerAsync(string symbol, CancellationToken ct = default)
+        public async Task<HttpResult<BullishTicker>> GetTickerAsync(string symbol, CancellationToken ct = default)
         {
             var request = _definitions.GetOrCreate(HttpMethod.Get, $"/v1/markets/{symbol}/tick", BullishExchange.RateLimiter.Generic, 1, false);
             var result = await _baseClient.SendAsync<BullishTicker>(request, null, ct).ConfigureAwait(false);

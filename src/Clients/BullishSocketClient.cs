@@ -45,7 +45,7 @@ namespace Bullish.Net.Clients
         {
             Initialize(options.Value);
 
-            ExchangeApi = AddApiClient(new BullishSocketClientExchangeApi(_logger, options.Value));
+            ExchangeApi = AddApiClient(new BullishSocketClientExchangeApi(loggerFactory, options.Value));
         }
         #endregion
 

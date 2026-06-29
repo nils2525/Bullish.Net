@@ -16,41 +16,41 @@ namespace Bullish.Net.Clients.ExchangeApi
             _baseClient = baseClient;
         }
 
-        public Task<WebCallResult<BullishAuthResponse>> LoginHmac(CancellationToken ct = default)
+        public Task<HttpResult<BullishAuthResponse>> LoginHmac(CancellationToken ct = default)
         {
             var request = _definitions.GetOrCreate(HttpMethod.Get, "/v1/users/hmac/login", BullishExchange.RateLimiter.Generic, 1, true);
             return _baseClient.SendAsync<BullishAuthResponse>(request, null, ct);
         }
 
-        public async Task<WebCallResult> LogoutAsync(CancellationToken ct = default)
+        public async Task<HttpResult> LogoutAsync(CancellationToken ct = default)
         {
             var authProvider = _baseClient.AuthenticationProvider;
             return authProvider == null
-                ? new WebCallResult(null, null, null, TimeSpan.Zero, null, null, null, null, null, null, null)
+                ? new HttpResult { Exchange = BullishExchange.ExchangeName }
                 : await authProvider.LogoutAsync(_baseClient.ClientOptions.Environment, ct).ConfigureAwait(false);
         }
 
-        public Task<WebCallResult<BullishNonceRange>> GetNonceAsync(CancellationToken ct = default)
+        public Task<HttpResult<BullishNonceRange>> GetNonceAsync(CancellationToken ct = default)
         {
             var request = _definitions.GetOrCreate(HttpMethod.Get, "/v1/nonce", BullishExchange.RateLimiter.Generic, 1, false);
             return _baseClient.SendAsync<BullishNonceRange>(request, null, ct);
         }
 
-        public Task<WebCallResult<BullishTradingAccount[]>> GetTradingAccountsAsync(CancellationToken ct = default)
+        public Task<HttpResult<BullishTradingAccount[]>> GetTradingAccountsAsync(CancellationToken ct = default)
         {
             var request = _definitions.GetOrCreate(HttpMethod.Get, "/v1/accounts/trading-accounts", BullishExchange.RateLimiter.Generic, 1, true);
             return _baseClient.SendAsync<BullishTradingAccount[]>(request, null, ct);
         }
 
-        public Task<WebCallResult<BullishTradingAccount>> GetTradingAccountAsync(string tradingAccountId, CancellationToken ct = default)
+        public Task<HttpResult<BullishTradingAccount>> GetTradingAccountAsync(string tradingAccountId, CancellationToken ct = default)
         {
             var request = _definitions.GetOrCreate(HttpMethod.Get, $"/v1/accounts/trading-accounts/{tradingAccountId}", BullishExchange.RateLimiter.Generic, 1, true);
             return _baseClient.SendAsync<BullishTradingAccount>(request, null, ct);
         }
 
-        public Task<WebCallResult<BullishAccountAsset[]>> GetAssetAccountsAsync(string tradingAccountId, CancellationToken ct = default)
+        public Task<HttpResult<BullishAccountAsset[]>> GetAssetAccountsAsync(string tradingAccountId, CancellationToken ct = default)
         {
-            var parameters = new ParameterCollection
+            var parameters = new Parameters(BullishExchange._parameterSerializationSettings)
             {
                 { "tradingAccountId", tradingAccountId }
             };
@@ -59,9 +59,9 @@ namespace Bullish.Net.Clients.ExchangeApi
             return _baseClient.SendAsync<BullishAccountAsset[]>(request, parameters, ct);
         }
 
-        public Task<WebCallResult<BullishAccountAsset>> GetAssetAccountAsync(string tradingAccountId, string asset, CancellationToken ct = default)
+        public Task<HttpResult<BullishAccountAsset>> GetAssetAccountAsync(string tradingAccountId, string asset, CancellationToken ct = default)
         {
-            var parameters = new ParameterCollection
+            var parameters = new Parameters(BullishExchange._parameterSerializationSettings)
             {
                 { "tradingAccountId", tradingAccountId }
             };
@@ -70,9 +70,9 @@ namespace Bullish.Net.Clients.ExchangeApi
             return _baseClient.SendAsync<BullishAccountAsset>(request, parameters, ct);
         }
 
-        public Task<WebCallResult<BullishDerivativePosition[]>> GetDerivativePositionsAsync(string? tradingAccountId = null, string? symbol = null, BullishSymbolType? marketType = null, BullishOptionType? optionType = null, string? sort = null, CancellationToken ct = default)
+        public Task<HttpResult<BullishDerivativePosition[]>> GetDerivativePositionsAsync(string? tradingAccountId = null, string? symbol = null, BullishSymbolType? marketType = null, BullishOptionType? optionType = null, string? sort = null, CancellationToken ct = default)
         {
-            var parameters = new ParameterCollection();
+            var parameters = new Parameters(BullishExchange._parameterSerializationSettings);
             parameters.AddOptional("tradingAccountId", tradingAccountId);
             parameters.AddOptional("symbol", symbol);
             parameters.AddOptionalEnum("marketType", marketType);
@@ -83,9 +83,9 @@ namespace Bullish.Net.Clients.ExchangeApi
             return _baseClient.SendAsync<BullishDerivativePosition[]>(request, parameters, ct);
         }
 
-        public Task<WebCallResult<BullishMmpConfigurationResult>> GetMmpConfigurationAsync(string tradingAccountId, string? symbol = null, CancellationToken ct = default)
+        public Task<HttpResult<BullishMmpConfigurationResult>> GetMmpConfigurationAsync(string tradingAccountId, string? symbol = null, CancellationToken ct = default)
         {
-            var parameters = new ParameterCollection
+            var parameters = new Parameters(BullishExchange._parameterSerializationSettings)
             {
                 { "tradingAccountId", tradingAccountId }
             };
@@ -95,9 +95,9 @@ namespace Bullish.Net.Clients.ExchangeApi
             return _baseClient.SendAsync<BullishMmpConfigurationResult>(request, parameters, ct);
         }
 
-        public Task<WebCallResult<BullishPagedResult<BullishBorrowInterest>>> GetBorrowInterestHistoryAsync(string asset, DateTime startTime, DateTime endTime, string? tradingAccountId = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default)
+        public Task<HttpResult<BullishPagedResult<BullishBorrowInterest>>> GetBorrowInterestHistoryAsync(string asset, DateTime startTime, DateTime endTime, string? tradingAccountId = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default)
         {
-            var parameters = new ParameterCollection
+            var parameters = new Parameters(BullishExchange._parameterSerializationSettings)
             {
                 { "assetSymbol", asset },
                 { "createdAtDatetime[gte]", BullishParameterFormats.FormatDateTime(startTime) },
@@ -109,9 +109,9 @@ namespace Bullish.Net.Clients.ExchangeApi
             return _baseClient.SendAsync<BullishPagedResult<BullishBorrowInterest>>(request, parameters, ct);
         }
 
-        public Task<WebCallResult<BullishPagedResult<BullishDerivativeSettlement>>> GetDerivativeSettlementHistoryAsync(DateTime startTime, DateTime endTime, string? tradingAccountId = null, string? symbol = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default)
+        public Task<HttpResult<BullishPagedResult<BullishDerivativeSettlement>>> GetDerivativeSettlementHistoryAsync(DateTime startTime, DateTime endTime, string? tradingAccountId = null, string? symbol = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default)
         {
-            var parameters = new ParameterCollection
+            var parameters = new Parameters(BullishExchange._parameterSerializationSettings)
             {
                 { "settlementDatetime[gte]", BullishParameterFormats.FormatDateTime(startTime) },
                 { "settlementDatetime[lte]", BullishParameterFormats.FormatDateTime(endTime) }
@@ -123,9 +123,9 @@ namespace Bullish.Net.Clients.ExchangeApi
             return _baseClient.SendAsync<BullishPagedResult<BullishDerivativeSettlement>>(request, parameters, ct);
         }
 
-        public Task<WebCallResult<BullishPagedResult<BullishTransfer>>> GetTransferHistoryAsync(DateTime startTime, DateTime endTime, string? tradingAccountId = null, string? status = null, string? requestId = null, string? asset = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default)
+        public Task<HttpResult<BullishPagedResult<BullishTransfer>>> GetTransferHistoryAsync(DateTime startTime, DateTime endTime, string? tradingAccountId = null, string? status = null, string? requestId = null, string? asset = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default)
         {
-            var parameters = new ParameterCollection
+            var parameters = new Parameters(BullishExchange._parameterSerializationSettings)
             {
                 { "createdAtDatetime[gte]", BullishParameterFormats.FormatDateTime(startTime) },
                 { "createdAtDatetime[lte]", BullishParameterFormats.FormatDateTime(endTime) }
@@ -139,9 +139,9 @@ namespace Bullish.Net.Clients.ExchangeApi
             return _baseClient.SendAsync<BullishPagedResult<BullishTransfer>>(request, parameters, ct);
         }
 
-        public Task<WebCallResult<BullishPagedResult<BullishCustodyTransaction>>> GetCustodyTransactionHistoryAsync(DateTime? startTime = null, DateTime? endTime = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default)
+        public Task<HttpResult<BullishPagedResult<BullishCustodyTransaction>>> GetCustodyTransactionHistoryAsync(DateTime? startTime = null, DateTime? endTime = null, int? pageSize = null, string? nextPage = null, string? previousPage = null, CancellationToken ct = default)
         {
-            var parameters = new ParameterCollection();
+            var parameters = new Parameters(BullishExchange._parameterSerializationSettings);
             parameters.AddOptional("createdAtDatetime[gte]", startTime == null ? null : BullishParameterFormats.FormatDateTime(startTime.Value));
             parameters.AddOptional("createdAtDatetime[lte]", endTime == null ? null : BullishParameterFormats.FormatDateTime(endTime.Value));
             BullishPaginationParameters.AddMetaData(parameters);
@@ -151,42 +151,42 @@ namespace Bullish.Net.Clients.ExchangeApi
             return _baseClient.SendAsync<BullishPagedResult<BullishCustodyTransaction>>(request, parameters, ct);
         }
 
-        public Task<WebCallResult<BullishWithdrawalLimit>> GetWithdrawalLimitsAsync(string asset, CancellationToken ct = default)
+        public Task<HttpResult<BullishWithdrawalLimit>> GetWithdrawalLimitsAsync(string asset, CancellationToken ct = default)
         {
             var request = _definitions.GetOrCreate(HttpMethod.Get, $"/v1/wallets/limits/{asset}", BullishExchange.RateLimiter.Generic, 1, true);
             return _baseClient.SendAsync<BullishWithdrawalLimit>(request, null, ct);
         }
 
-        public Task<WebCallResult<BullishCryptoDepositInstruction[]>> GetCryptoDepositInstructionsAsync(string asset, CancellationToken ct = default)
+        public Task<HttpResult<BullishCryptoDepositInstruction[]>> GetCryptoDepositInstructionsAsync(string asset, CancellationToken ct = default)
         {
             var request = _definitions.GetOrCreate(HttpMethod.Get, $"/v1/wallets/deposit-instructions/crypto/{asset}", BullishExchange.RateLimiter.Generic, 1, true);
             return _baseClient.SendAsync<BullishCryptoDepositInstruction[]>(request, null, ct);
         }
 
-        public Task<WebCallResult<BullishFiatDepositInstruction[]>> GetFiatDepositInstructionsAsync(string asset, CancellationToken ct = default)
+        public Task<HttpResult<BullishFiatDepositInstruction[]>> GetFiatDepositInstructionsAsync(string asset, CancellationToken ct = default)
         {
             var request = _definitions.GetOrCreate(HttpMethod.Get, $"/v1/wallets/deposit-instructions/fiat/{asset}", BullishExchange.RateLimiter.Generic, 1, true);
             return _baseClient.SendAsync<BullishFiatDepositInstruction[]>(request, null, ct);
         }
 
-        public Task<WebCallResult<BullishCryptoWithdrawalInstruction[]>> GetCryptoWithdrawalInstructionsAsync(string asset, bool? signed = null, CancellationToken ct = default)
+        public Task<HttpResult<BullishCryptoWithdrawalInstruction[]>> GetCryptoWithdrawalInstructionsAsync(string asset, bool? signed = null, CancellationToken ct = default)
         {
-            var parameters = new ParameterCollection();
+            var parameters = new Parameters(BullishExchange._parameterSerializationSettings);
             parameters.AddOptional("signed", signed?.ToString().ToLowerInvariant());
 
             var request = _definitions.GetOrCreate(HttpMethod.Get, $"/v1/wallets/withdrawal-instructions/crypto/{asset}", BullishExchange.RateLimiter.Generic, 1, true);
             return _baseClient.SendAsync<BullishCryptoWithdrawalInstruction[]>(request, parameters, ct);
         }
 
-        public Task<WebCallResult<BullishFiatWithdrawalInstruction[]>> GetFiatWithdrawalInstructionsAsync(string asset, CancellationToken ct = default)
+        public Task<HttpResult<BullishFiatWithdrawalInstruction[]>> GetFiatWithdrawalInstructionsAsync(string asset, CancellationToken ct = default)
         {
             var request = _definitions.GetOrCreate(HttpMethod.Get, $"/v1/wallets/withdrawal-instructions/fiat/{asset}", BullishExchange.RateLimiter.Generic, 1, true);
             return _baseClient.SendAsync<BullishFiatWithdrawalInstruction[]>(request, null, ct);
         }
 
-        public Task<WebCallResult<BullishSelfHostedWalletVerification[]>> GetSelfHostedWalletVerificationsAsync(string? address = null, string? destinationId = null, CancellationToken ct = default)
+        public Task<HttpResult<BullishSelfHostedWalletVerification[]>> GetSelfHostedWalletVerificationsAsync(string? address = null, string? destinationId = null, CancellationToken ct = default)
         {
-            var parameters = new ParameterCollection();
+            var parameters = new Parameters(BullishExchange._parameterSerializationSettings);
             parameters.AddOptional("address", address);
             parameters.AddOptional("destinationId", destinationId);
 
@@ -194,9 +194,9 @@ namespace Bullish.Net.Clients.ExchangeApi
             return _baseClient.SendAsync<BullishSelfHostedWalletVerification[]>(request, parameters, ct);
         }
 
-        public Task<WebCallResult<BullishSelfHostedWalletVerificationInstruction>> InitiateSelfHostedWalletVerificationAsync(string network, string asset, string address, string label, string requestedDepositAmount, string? memo = null, CancellationToken ct = default)
+        public Task<HttpResult<BullishSelfHostedWalletVerificationInstruction>> InitiateSelfHostedWalletVerificationAsync(string network, string asset, string address, string label, string requestedDepositAmount, string? memo = null, CancellationToken ct = default)
         {
-            var parameters = new ParameterCollection
+            var parameters = new Parameters(BullishExchange._parameterSerializationSettings)
             {
                 { "network", network },
                 { "symbol", asset },
@@ -210,7 +210,7 @@ namespace Bullish.Net.Clients.ExchangeApi
             return _baseClient.SendAsync<BullishSelfHostedWalletVerificationInstruction>(request, parameters, ct);
         }
 
-        public Task<WebCallResult> DeleteWithdrawalInstructionAsync(string destinationId, CancellationToken ct = default)
+        public Task<HttpResult> DeleteWithdrawalInstructionAsync(string destinationId, CancellationToken ct = default)
         {
             var request = _definitions.GetOrCreate(HttpMethod.Delete, $"/v1/wallets/withdrawal-instructions/{destinationId}", BullishExchange.RateLimiter.Generic, 1, true);
             return _baseClient.SendAsync(request, null, ct);

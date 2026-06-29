@@ -12,7 +12,7 @@ namespace Bullish.Net.Objects.Sockets
         public BullishQueryBase(BullishSocketRequest request, string listenerIdentifier, bool authenticated, int weight = 1)
             : base(request, authenticated, weight)
         {
-            MessageRouter = MessageRouter.CreateWithoutTopicFilter<T>([listenerIdentifier, "error"], HandleMessage);
+            MessageRouter = MessageRouter.CreateForQuery<T>(new[] { listenerIdentifier, "error" }, HandleMessage);
         }
 
         public BullishQueryBase(BullishSocketRequest request, bool authenticated, int weight = 1)
@@ -22,9 +22,9 @@ namespace Bullish.Net.Objects.Sockets
         public CallResult<T> HandleMessage(SocketConnection connection, DateTime receiveTime, string? originalData, T message)
         {
             if (message is BullishSocketResponse res && res.Error != null)
-                return new CallResult<T>(new ServerError(res.Error.Code, new(CryptoExchange.Net.Objects.Errors.ErrorType.Unknown, res.Error.Message)));
+                return CallResult.Fail<T>(new ServerError(res.Error.Code, new(CryptoExchange.Net.Objects.Errors.ErrorType.Unknown, res.Error.Message)));
 
-            return new CallResult<T>(message, originalData, null);
+            return CallResult.Ok(message, originalData);
         }
     }
 }

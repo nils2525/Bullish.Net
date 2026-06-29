@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 using CryptoExchange.Net;
 using CryptoExchange.Net.Objects;
 
@@ -31,7 +31,7 @@ namespace Bullish.Net.Objects.Internal
         /// ["<c>params</c>"] Request parameters
         /// </summary>
         [JsonPropertyName("params"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public ParameterCollection? Parameters { get; set; }
+        public Parameters? Parameters { get; set; }
 
         /// <summary>
         /// ["<c>id</c>"] Request id

@@ -48,8 +48,8 @@ namespace Bullish.Net.Objects.Sockets.Subscriptions
             Topic = $"{listenChannel}#{symbol ?? tradingAccountId}";
 
             MessageRouter = symbol != null ?
-                MessageRouter.CreateWithTopicFilter<BullishSubscriptionEvent<T>>(listenChannel, symbol, DoHandleMessage) :
-                MessageRouter.CreateWithoutTopicFilter<BullishSubscriptionEvent<T>>(listenChannel, DoHandleMessage);
+                MessageRouter.CreateForEvent<BullishSubscriptionEvent<T>>(listenChannel, symbol, DoHandleMessage) :
+                MessageRouter.CreateForEvent<BullishSubscriptionEvent<T>>(listenChannel, DoHandleMessage);
         }
         #endregion
 
@@ -57,7 +57,7 @@ namespace Bullish.Net.Objects.Sockets.Subscriptions
         /// <inheritdoc />
         protected override Query? GetSubQuery(SocketConnection connection)
         {
-            var parameters = new ParameterCollection
+            var parameters = new Parameters(BullishExchange._parameterSerializationSettings)
             {
                 { "topic", _channel }
             };
@@ -77,7 +77,7 @@ namespace Bullish.Net.Objects.Sockets.Subscriptions
             if (!_serverSideUnsubscribe)
                 return null;
 
-            var parameters = new ParameterCollection
+            var parameters = new Parameters(BullishExchange._parameterSerializationSettings)
             {
                 { "topic", _channel }
             };
@@ -95,7 +95,7 @@ namespace Bullish.Net.Objects.Sockets.Subscriptions
         public CallResult DoHandleMessage(SocketConnection connection, DateTime receiveTime, string? originalData, BullishSubscriptionEvent<T> message)
         {
             _handler.Invoke(receiveTime, originalData, message);
-            return CallResult.SuccessResult;
+            return CallResult.Ok();
         }
         #endregion
     }
