@@ -1,6 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using Bullish.Net.Objects.Internal;
 using Bullish.Net.Objects.Models;
+using CryptoExchange.Net.Objects;
 
 namespace Bullish.Net.Converters
 {
@@ -55,6 +56,7 @@ namespace Bullish.Net.Converters
     [JsonSerializable(typeof(BullishSubscriptionEvent<BullishAccountAsset[]>))]
     [JsonSerializable(typeof(BullishSubscriptionEvent<BullishOrder[]>))]
     [JsonSerializable(typeof(BullishSubscriptionEvent<BullishUserTrade[]>))]
+    [JsonSerializable(typeof(Parameters))]
     internal partial class BullishSourceGenerationContext : JsonSerializerContext
     { }
 }
