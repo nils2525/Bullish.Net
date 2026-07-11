@@ -62,6 +62,13 @@ namespace Bullish.Net.Clients.ExchangeApi
             var result = await _baseClient.SendAsync<BullishTicker>(request, null, ct).ConfigureAwait(false);
             return result;
         }
+
+        /// <inheritdoc />
+        public async Task<HttpResult<BullishIndexPrice>> GetIndexPriceAsync(string assetSymbol, CancellationToken ct = default)
+        {
+            var request = _definitions.GetOrCreate(HttpMethod.Get, $"/v1/index-prices/{assetSymbol}", BullishExchange.RateLimiter.Generic, 1, false);
+            return await _baseClient.SendAsync<BullishIndexPrice>(request, null, ct).ConfigureAwait(false);
+        }
         #endregion
 
     }

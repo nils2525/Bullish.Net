@@ -23,6 +23,7 @@ namespace Bullish.Net.Converters
     [JsonSerializable(typeof(BullishFiatWithdrawalInstruction[]))]
     [JsonSerializable(typeof(BullishFeeTier))]
     [JsonSerializable(typeof(BullishFeeTier[]))]
+    [JsonSerializable(typeof(BullishIndexPrice))]
     [JsonSerializable(typeof(BullishMmpConfigurationResult))]
     [JsonSerializable(typeof(BullishNonceRange))]
     [JsonSerializable(typeof(BullishOrder))]

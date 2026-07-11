@@ -43,5 +43,14 @@ namespace Bullish.Net.Interfaces.Clients.ExchangeApi
         /// </summary>
         /// <param name="ct">Cancellation token</param>
         Task<HttpResult<BullishTicker>> GetTickerAsync(string symbol, CancellationToken ct = default);
+
+        /// <summary>
+        /// Get the index price for an asset.
+        /// <para><a href="https://docs.exchange.bullish.com/rest/api/get-index-price-by-symbol/" /></para>
+        /// </summary>
+        /// <param name="assetSymbol">Asset symbol, for example <c>BTC</c>.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The current asset index price.</returns>
+        Task<HttpResult<BullishIndexPrice>> GetIndexPriceAsync(string assetSymbol, CancellationToken ct = default);
     }
 }
