@@ -24,14 +24,21 @@ namespace Bullish.Net
         private readonly object _authLock = new();
         private readonly ConcurrentDictionary<IDictionary<string, string>, byte> _trackedSocketHeaders = new(ReferenceEqualityComparer.Instance);
         private readonly SemaphoreSlim _authSemaphore = new(1, 1);
+        private readonly ApiProxy? _proxy;
 
         private BullishAuthResponse? _authData = null;
         private DateTime _jwtValidUntil = DateTime.MinValue;
 
         public override string Key => ApiCredentials.Key;
 
-        public BullishAuthenticationProvider(HMACCredential credentials) : base(credentials)
-        { }
+        /// <summary>Captures the parent's proxy for login, logout and later token refresh helpers.</summary>
+        public BullishAuthenticationProvider(HMACCredential credentials, ApiProxy? proxy = null) : base(credentials)
+        {
+            _proxy = CopyProxy(proxy);
+        }
+
+        private static ApiProxy? CopyProxy(ApiProxy? proxy)
+            => proxy == null ? null : new ApiProxy(proxy.Host, proxy.Port, proxy.Login, proxy.Password);
 
         private string GenerateLoginNonce()
         {
@@ -138,7 +145,7 @@ namespace Bullish.Net
 
         private async Task<HttpResult> LogoutTokenAsync(BullishEnvironment environment, string token, CancellationToken ct = default)
         {
-            var client = new BullishRestClient(o => { o.Environment = environment; });
+            using var client = new BullishRestClient(o => { o.Environment = environment; o.Proxy = CopyProxy(_proxy); });
             return await ((BullishRestClientExchangeApi)client.ExchangeApi).LogoutTokenAsync(token, ct).ConfigureAwait(false);
         }
 
@@ -225,7 +232,7 @@ namespace Bullish.Net
                     }
                 }
 
-                var client = new BullishRestClient(o => { o.Environment = environment; o.ApiCredentials = ApiCredentials; });
+                using var client = new BullishRestClient(o => { o.Environment = environment; o.ApiCredentials = ApiCredentials; o.Proxy = CopyProxy(_proxy); });
                 var result = await client.ExchangeApi.Account.LoginHmac().ConfigureAwait(false);
                 if (!result.Success)
                     throw new Exception($"Failed to authenticate: {result.Error}");

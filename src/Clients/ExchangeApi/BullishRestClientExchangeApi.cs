@@ -49,7 +49,7 @@ namespace Bullish.Net.Clients.ExchangeApi
 
         /// <inheritdoc />
         protected override BullishAuthenticationProvider CreateAuthenticationProvider(HMACCredential credentials)
-            => new BullishAuthenticationProvider(credentials);
+            => new BullishAuthenticationProvider(credentials, ClientOptions.Proxy);
 
 
         internal Task<HttpResult<T>> SendAsync<T>(RequestDefinition definition, Parameters? parameters, CancellationToken cancellationToken, int? weight = null) where T : class

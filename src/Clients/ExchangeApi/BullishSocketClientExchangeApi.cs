@@ -51,7 +51,7 @@ namespace Bullish.Net.Clients.ExchangeApi
 
         /// <inheritdoc />
         protected override BullishAuthenticationProvider CreateAuthenticationProvider(HMACCredential credentials)
-            => new BullishAuthenticationProvider(credentials);
+            => new BullishAuthenticationProvider(credentials, ClientOptions.Proxy);
 
         public override ISocketMessageHandler CreateMessageConverter(WebSocketMessageType messageType)
             => new BullishSocketSpotMessageHandler();
