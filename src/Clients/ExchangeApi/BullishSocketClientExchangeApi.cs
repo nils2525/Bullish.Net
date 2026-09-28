@@ -107,7 +107,8 @@ namespace Bullish.Net.Clients.ExchangeApi
                     );
             });
 
-            var subscription = new BullishSubscription<BullishTicker>(_logger, "tick", symbol, internalHandler, false, "V1TATickerResponse");
+            // Stop released tickers on the server while other symbols still share this connection.
+            var subscription = new BullishSubscription<BullishTicker>(_logger, "tick", symbol, internalHandler, false, "V1TATickerResponse", serverSideUnsubscribe: true);
             return await SubscribeAsync(BaseAddress.AppendPath($"/trading-api/v1/market-data/tick"), subscription, ct).ConfigureAwait(false);
         }
 
