@@ -88,7 +88,12 @@ namespace Bullish.Net.Objects.Sockets.Subscriptions
             {
                 Method = "unsubscribe",
                 Parameters = parameters
-            }, Authenticated);
+            }, Authenticated)
+            {
+                // CEN waits until the command is sent. Waiting for each ticker acknowledgement
+                // serializes shutdown by one round trip per market; the final release closes the socket.
+                ExpectsResponse = false
+            };
         }
 
         /// <inheritdoc />
