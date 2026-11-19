@@ -1,4 +1,5 @@
 using System.Net.WebSockets;
+using System.Text.Json;
 using Bullish.Net.Clients.MessageHandlers;
 using Bullish.Net.ExtensionMethods;
 using Bullish.Net.Interfaces.Clients.ExchangeApi;
@@ -55,6 +56,25 @@ namespace Bullish.Net.Clients.ExchangeApi
 
         public override ISocketMessageHandler CreateMessageConverter(WebSocketMessageType messageType)
             => new BullishSocketSpotMessageHandler();
+
+        /// <inheritdoc />
+        protected override bool HandleUnhandledMessage(SocketConnection connection, string typeIdentifier, ReadOnlySpan<byte> data)
+        {
+            // Unsubscribe is sent without waiting, so its acknowledgement can arrive after the query is gone.
+            if (!long.TryParse(typeIdentifier, out _))
+                return false;
+
+            try
+            {
+                var response = JsonSerializer.Deserialize<BullishSocketResponse>(data, SerializerOptions.WithConverters(BullishExchange.SerializerContext));
+                return response is { Error: null, Result: { ResponseCode: 200, ResponseCodeName: "OK", Message: "Successfully unsubscribed" } }
+                    && response.Id == typeIdentifier;
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+        }
 
         protected override WebSocketParameters GetWebSocketParameters(string address)
         {
